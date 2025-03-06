@@ -1,11 +1,16 @@
-import { Link } from 'react-router-dom';
+import React from 'react';
 import NavBar from './components/NavBar';
+import HomeBody from './components/HomeBody';
 
-export default function HomePage() {
+const HomePage = () => {
   return (
-    <>
-       <NavBar />
-
-    </>
+    <div className="flex flex-col min-h-screen">
+      <NavBar />
+      <main className="flex-grow">
+        <HomeBody />
+      </main>
+    </div>
   );
-}
+};
+
+export default HomePage;
