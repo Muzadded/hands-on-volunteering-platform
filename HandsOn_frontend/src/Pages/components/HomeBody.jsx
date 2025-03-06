@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 export default function HomeBody() {
   return (
     <div className="relative isolate">
-      <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
+      <div className="mx-auto max-w-7xl px-6 py-24 sm:py-15 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="text-4xl font-bold tracking-tight text-blue-800 sm:text-6xl">
             Make a Difference in Your Community
@@ -11,13 +11,9 @@ export default function HomeBody() {
           <p className="mt-6 text-lg leading-8 text-gray-600">
             Join HandsOn, the community-driven platform that connects volunteers with meaningful opportunities to create positive social impact.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-x-6">
-            <Link
-              to="/events"
-              className="rounded-md bg-primary-600 px-3.5 py-2.5 text-lg font-semibold text-black text-blue-500 shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-            >
-              Join Now
-            </Link>
+          <div className="mt-10 ml-40 flex items-center justify-center">
+          <Link to="/login" className="btn btn-info mr-2">Login</Link>
+          <Link to="/register" className="btn btn-primary mr-40">Register</Link>
           </div>
         </div>
 

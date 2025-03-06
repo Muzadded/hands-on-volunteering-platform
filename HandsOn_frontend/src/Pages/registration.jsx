@@ -1,15 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
-
+import NavBar from "./components/NavBar";
 const Registration = () => {
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <>
+    <NavBar />
+    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-5">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <img
-          className="mx-auto h-15 w-auto"
-          src="https://yt3.googleusercontent.com/SQgA6Ar0GVaooh7Bgr41UhNNDJ9N8pWchLEGouRHQDx2w5ZxFE3P_oaZz6xEJaxpoI3MeKysrg=s900-c-k-c0x00ffffff-no-rj"
-          alt="Workflow"
-        />
         <h2 className="mt-6 text-center text-3xl leading-9 font-extrabold text-blue-800">
             Create a new account
         </h2>
@@ -259,6 +256,7 @@ const Registration = () => {
         </div>
     </div>
 </div>
+</>
   );
 };
 
