@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
     
     try {
         const jwtToken = req.header("token");
@@ -16,7 +16,7 @@ module.exports = (req, res, next) => {
         req.user = payload.user;
 
 
-        
+        next();
         
     } catch (error) {
         console.error(error.message);
