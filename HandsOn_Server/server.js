@@ -12,6 +12,9 @@ app.use(cors());
 //Register and Login
 app.use("/auth", require("./routes/jwtAuth"));
 
+//Dashboard
+app.use("/dashboard", require("./routes/dashboard"));
+
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
