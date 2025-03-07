@@ -2,8 +2,8 @@ const router = require("express").Router();
 const client = require("../db");
 const bcrypt = require("bcrypt");
 const jwtGenerator = require("../utils/jwtGenerator");
-//Register
 
+//Register
 router.post("/register",async (req, res) => {
   
     try{
@@ -24,7 +24,6 @@ router.post("/register",async (req, res) => {
             [name, gender, dob, email, hashedPassword, about, skills, causes]);
 
         const token = jwtGenerator(newUser.rows[0].user_id);
-
         res.json({token});
 
     }catch(error){
@@ -34,7 +33,31 @@ router.post("/register",async (req, res) => {
 });
 
 //Login
+router.post("/login", async (req, res) => {
+    try{
+        const {email, password} = req.body;
+        const user = await client.query("SELECT * FROM users WHERE email = $1", [email]);
 
+        if(user.rowCount === 0){
+            return res.status(401).send("User not found");
+        }
+
+        const validPassword = await bcrypt.compare(password, user.rows[0].password);
+        //console.log(validPassword);
+
+        if(!validPassword){
+            return res.status(401).send("Invalid Password");
+        }
+
+        const token = jwtGenerator(user.rows[0].user_id);
+        res.json({token});
+
+
+    }catch(error){
+        console.error(error.message);
+        res.status(500).send("Server Error");
+    }
+});
 
 
 module.exports = router;
