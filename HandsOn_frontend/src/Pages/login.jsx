@@ -1,8 +1,42 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import NavBar from './components/NavBar';
+import axios from 'axios';
 
-const Login = () => {
+function Login({ setAuth }) {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const navigate = useNavigate();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    axios.post("http://localhost:5000/auth/login", formData)
+    .then((res) => {
+      localStorage.setItem("token", res.data.token);
+      
+      if (setAuth) {
+        setAuth(true);
+      }
+      
+      navigate("/dashboard");
+    })
+    .catch((err) => {
+      console.error("Login error:", err);
+      if (err.response) {
+        alert(typeof err.response.data === 'string' ? 
+              err.response.data : 
+              (err.response.data?.message || "Login failed"));
+      } else if (err.request) {
+        alert("No response from server. Please try again.");
+      } else {
+        alert("Error: " + err.message);
+      }
+    });
+  };
+
   return (
     <>
       <NavBar />
@@ -40,20 +74,34 @@ const Login = () => {
               <a href="#" className="text-xs text-center text-blue-500 uppercase">or login with email</a>
               <span className="border-b w-1/5 lg:w-1/4"></span>
             </div>
+            <form onSubmit={handleSubmit}>
             <div className="mt-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">Email Address</label>
-              <input className="bg-gray-200 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-2 px-4 block w-full appearance-none" type="email" />
+              <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
+              <input 
+                className="bg-gray-200 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-2 px-4 block w-full appearance-none" 
+                type="email" 
+                required 
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
             </div>
             <div className="mt-4">
               <div className="flex justify-between">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Password</label>
                 <a href="#" className="text-xs text-blue-500">Forget Password?</a>
               </div>
-              <input className="bg-gray-200 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-2 px-4 block w-full appearance-none" type="password" />
+              <input 
+                className="bg-gray-200 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-2 px-4 block w-full appearance-none" 
+                type="password" 
+                required 
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
             </div>
             <div className="mt-8">
-              <button className="bg-blue-500 text-white font-bold py-2 px-4 w-full rounded hover:bg-blue-800">Login</button>
+              <button
+              type="submit"
+               className="bg-blue-500 text-white font-bold py-2 px-4 w-full rounded hover:bg-blue-800">Login</button>
             </div>
+            </form>
             <div className="mt-4 flex items-center justify-between">
               <span className="border-b w-1/5 md:w-1/4"></span>
               <Link
@@ -63,7 +111,8 @@ const Login = () => {
               or sign up
             </Link>
               <span className="border-b w-1/5 md:w-1/4"></span>
-            </div>
+              </div>
+            
           </div>
         </div>
       </div>
