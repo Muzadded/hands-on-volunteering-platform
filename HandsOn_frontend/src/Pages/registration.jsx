@@ -1,7 +1,58 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import NavBar from "./components/NavBar";
-const Registration = () => {
+import { useState } from "react";
+import axios from "axios";
+
+
+function Registration () {
+
+  const [formData, setFormData] = useState({
+    name: "",
+    gender: "",
+    dob: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+    about: "",
+    skills: "",
+    causes: [],
+  });
+  const navigate = useNavigate();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Check if password and password_confirmation match
+    if (formData.password !== formData.password_confirmation) {
+      alert("Passwords do not match. Please try again.");
+      return; 
+    }
+    
+    // If passwords match, proceed with the API call
+    axios.post("http://localhost:5000/auth/register", formData)
+      .then((res) => {
+        
+        if (res.data.status === "success") {
+          localStorage.setItem("token", res.data.token);
+          navigate("/login");
+        } else {
+          alert(res.data.message || "Registration failed");
+        }
+      })
+      .catch((err) => {
+        if (err.response) {
+          alert(typeof err.response.data === 'string' ? 
+                err.response.data : 
+                (err.response.data.message || "Registration failed"));
+        } else if (err.request) {
+          alert("No response from server. Please try again.");
+        } else {
+          alert("Error: " + err.message);
+        }
+      });
+  };
+
   return (
     <>
     <NavBar />
@@ -22,13 +73,13 @@ const Registration = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <form method="POST" action="#">
+            <form onSubmit={handleSubmit}>
                 <div>
               <label
-                htmlFor="email"
+                htmlFor="name"
                 className="block text-sm font-medium leading-5 text-gray-700"
               >
-                Name <span className="text-red-500">*</span>
+                Full Name <span className="text-red-500">*</span>
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <input
@@ -36,7 +87,8 @@ const Registration = () => {
                   name="name"
                   placeholder="John Doe"
                   type="text"
-                  required=""
+                  required
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
                 />
                 <div className="hidden absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -67,7 +119,8 @@ const Registration = () => {
                   <select
                     id="gender"
                     name="gender"
-                    required=""
+                    required
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
                   >
                     <option value="" disabled selected>Select your gender</option>
@@ -91,7 +144,8 @@ const Registration = () => {
                     id="dob"
                     name="dob"
                     type="date"
-                    required=""
+                    required
+                    onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
                   />
                 </div>
@@ -111,7 +165,8 @@ const Registration = () => {
                   name="email"
                   placeholder="user@example.com"
                   type="email"
-                            required=""
+                  required
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
                 />
                 <div className="hidden absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -142,7 +197,8 @@ const Registration = () => {
                   id="password"
                   name="password"
                   type="password"
-                  required=""
+                  required
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
                 />
                     </div>
@@ -160,7 +216,8 @@ const Registration = () => {
                   id="password_confirmation"
                   name="password_confirmation"
                   type="password"
-                  required=""
+                  required
+                  onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
                 />
               </div>
@@ -180,6 +237,7 @@ const Registration = () => {
                   rows="4"
                   placeholder="Tell us a bit about yourself and why you want to volunteer..."
                   maxLength="1000"
+                  onChange={(e) => setFormData({ ...formData, about: e.target.value })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
                 ></textarea>
               </div>
@@ -198,6 +256,7 @@ const Registration = () => {
                   name="skills"
                   type="text"
                   placeholder="e.g., Teaching, First Aid, Web Development, Cooking, Photography"
+                  onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -218,6 +277,7 @@ const Registration = () => {
                   id="causes"
                   name="causes"
                   multiple
+                  onChange={(e) => setFormData({ ...formData, causes: Array.from(e.target.selectedOptions, option => option.value) })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
                   size="4"
                 >
