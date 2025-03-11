@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 function Login({ setAuth }) {
   const [formData, setFormData] = useState({
@@ -10,20 +11,32 @@ function Login({ setAuth }) {
   });
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    axios.post("http://localhost:5000/auth/login", formData)
-    .then((res) => {
+    try {
+      const res = await axios.post("http://localhost:5000/auth/login", formData);
+      
+      if (!res.data.token) {
+        throw new Error('No token received from server');
+      }
+
       localStorage.setItem("token", res.data.token);
       
+      // Decode the token to get user_id
+      const decoded = jwtDecode(res.data.token);
+      const userId = decoded.user;
+      
+      console.log("Decoded user ID:", userId);
+      
       if (setAuth) {
-        setAuth(true);
+        setAuth(true, userId);
       }
       
-      navigate("/dashboard");
-    })
-    .catch((err) => {
+      // Navigate to dashboard with userId in the URL
+      navigate(`/dashboard/${userId}`);
+      
+    } catch (err) {
       console.error("Login error:", err);
       if (err.response) {
         alert(typeof err.response.data === 'string' ? 
@@ -34,7 +47,7 @@ function Login({ setAuth }) {
       } else {
         alert("Error: " + err.message);
       }
-    });
+    }
   };
 
   return (

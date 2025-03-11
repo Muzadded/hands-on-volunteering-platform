@@ -5,7 +5,7 @@ import { useState } from "react";
 import axios from "axios";
 
 
-function Registration ({setAuth}) {
+function Registration () {
 
   const [formData, setFormData] = useState({
     name: "",
@@ -34,10 +34,7 @@ function Registration ({setAuth}) {
       .then((res) => {
         
         if (res.data.status === "success") {
-          localStorage.setItem("token", res.data.token);
-          if (setAuth) {
-            setAuth(true);
-          }
+          alert("Registration successful. Please login to continue.");
           navigate("/login");
         } else {
           alert(res.data.message || "Registration failed");
