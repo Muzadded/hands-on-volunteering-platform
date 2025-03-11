@@ -1,8 +1,11 @@
-const router = require("express").Router();
-const client = require("../db");
-const bcrypt = require("bcrypt");
-const jwtGenerator = require("../utils/jwtGenerator");
-const authorization = require("../middleware/authorization");
+import { Router } from 'express';
+import client from '../db.js';
+import bcrypt from 'bcrypt';
+import jwtGenerator from '../utils/jwtGenerator.js';
+import authorization from '../middleware/authorization.js';
+
+const router = Router();
+
 //Register
 router.post("/register", async (req, res) => {
   try {
@@ -54,7 +57,8 @@ router.post("/login", async (req, res) => {
         }
 
         const token = jwtGenerator(user.rows[0].user_id);
-        res.json({token});
+        const user_id = user.rows[0].user_id;
+        res.json({token, user_id});
 
 
     }catch(error){
@@ -74,5 +78,4 @@ router.get("/is-verify", authorization, async (req, res) => {
     }
 })
 
-
-module.exports = router;
+export default router;

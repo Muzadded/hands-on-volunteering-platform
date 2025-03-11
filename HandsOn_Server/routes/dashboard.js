@@ -1,6 +1,8 @@
-const router = require("express").Router();
-const client = require("../db");
-const authorization = require("../middleware/authorization");
+import { Router } from 'express';
+import client from '../db.js';
+import authorization from '../middleware/authorization.js';
+
+const router = Router();
 
 router.get("/", authorization, async (req, res) => {
     try {
@@ -15,4 +17,5 @@ router.get("/", authorization, async (req, res) => {
         res.status(500).send("Server Error");
     }
 })
-module.exports = router;
+
+export default router;
