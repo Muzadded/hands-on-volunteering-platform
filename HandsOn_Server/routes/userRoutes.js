@@ -1,11 +1,11 @@
-import express from 'express';
-import { getUserById } from '../controllers/userController.js';
+import express from "express";
+import { getUserById, updateUser} from "../controllers/userController.js";
 
 const router = express.Router();
 
-
-
-// Get user by ID
-router.get('/users/:id', getUserById);
+// User routes
+router.get("/users/:id", getUserById);
+router.put("/users/:id", updateUser);
+// router.get("/test", test);
 
 export default router;
