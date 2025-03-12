@@ -54,6 +54,31 @@ export const createEventService = async (id, title, details, date, location, sta
     }
 };
 
+export const createHelpPostService = async (id, details, location) => {
+    try {
+        const result = await client.query(
+            "INSERT INTO help_post (created_by, details, location) VALUES ($1, $2, $3) RETURNING *",
+            [id, details, location]
+        );  
+        return result.rows[0];
+    } catch (error) {
+        console.error('Error in createHelpPostService:', error);
+        throw new Error('Failed to create help post');
+    }
+};
+
+export const getHelpPostsService = async () => {
+    try {
+        const result = await client.query(
+            "SELECT * FROM help_post"
+        );
+        return result.rows;
+    } catch (error) {
+        console.error('Error in getHelpPostsService:', error);
+        throw new Error('Failed to get help posts');
+    }
+};
+
 
 
 

@@ -1,4 +1,4 @@
-import { getUserByIdService, updateUserService, createEventService } from "../models/userModel.js";
+import { getUserByIdService, updateUserService, createEventService, createHelpPostService, getHelpPostsService } from "../models/userModel.js";
 
 const handleResponse = (res, status, message, data = null) => {
     const isError = status >= 400;
@@ -66,6 +66,40 @@ export const createEvent = async (req, res, next) => {
         next(error);
     }
 }
+
+export const createHelpPost = async (req, res, next) => {
+    const {details, location} = req.body;
+    try {
+        // Validate required fields
+        if (!details || !location) {
+            return handleResponse(res, 400, "Missing required fields");
+        }
+
+        console.log("Creating help post for user with ID:", req.params.id);
+        const newHelpPost = await createHelpPostService(req.params.id, details, location);
+        handleResponse(res, 200, "Help post created successfully", newHelpPost);
+    }
+    catch (error) {
+        console.error("Error in createHelpPost:", error);
+        handleResponse(res, 500, error.message || "Internal server error");
+        next(error);
+    }
+}
+
+export const getAllHelpPosts = async (req, res, next) => {
+    try {
+        const helpPosts = await getHelpPostsService();
+        handleResponse(res, 200, "Help posts fetched successfully", helpPosts);
+    }
+    catch (error) {
+        console.error("Error in getAllHelpPosts:", error);
+        handleResponse(res, 500, error.message || "Internal server error");
+        next(error);
+    }
+}
+
+
+
 
 
 // export const test = async (req, res) => {
