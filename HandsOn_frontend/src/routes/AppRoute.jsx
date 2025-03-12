@@ -5,6 +5,7 @@ import HomePage from "../Pages/HomePage";
 import Login from "../Pages/login";
 import Registration from "../Pages/registration";
 import Dashboard from "../Pages/Dashboard";
+import EditProfile from "../Pages/EditProfile";
 
 const AppRoute = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -70,6 +71,16 @@ const AppRoute = () => {
                     <Navigate to="/login" replace />
                 }
             />
+
+            <Route 
+                path="/edit-profile/:id" 
+                element={
+                    isAuthenticated ? 
+                    <EditProfile setAuth={setAuth} /> : 
+                    <Navigate to="/login" replace />
+                } 
+            />
+
 
 
         </Routes>
