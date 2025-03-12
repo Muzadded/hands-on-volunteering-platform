@@ -1,4 +1,4 @@
-import { getUserByIdService, updateUserService } from "../models/userModel.js";
+import { getUserByIdService, updateUserService, createEventService } from "../models/userModel.js";
 
 const handleResponse = (res, status, message, data = null) => {
     const isError = status >= 400;
@@ -48,6 +48,24 @@ export const updateUser = async (req, res, next) => {
     }
 };
 
+export const createEvent = async (req, res, next) => {
+    const {title, details, date, location, start_time, end_time, category, member_limit} = req.body;
+    try {
+        // Validate required fields
+        if (!title || !details || !date || !location || !start_time || !end_time || !category) {
+            return handleResponse(res, 400, "Missing required fields");
+        }
+        
+        console.log("Creating event for user with ID:", req.params.id);
+        const newEvent = await createEventService(req.params.id, title, details, date, location, start_time, end_time, category, member_limit);
+        handleResponse(res, 200, "Event created successfully", newEvent);
+    }
+    catch (error) {
+        console.error("Error in createEvent:", error);
+        handleResponse(res, 500, error.message || "Internal server error");
+        next(error);
+    }
+}
 
 
 // export const test = async (req, res) => {

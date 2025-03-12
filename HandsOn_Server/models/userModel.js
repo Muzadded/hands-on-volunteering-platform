@@ -20,9 +20,7 @@ export const updateUserService = async (id, name, gender, dob, about, skills, ca
         
         let skillsValue = skills;
         if (skills === null || skills === undefined) {
-            skillsValue = [];
-        } else if (!Array.isArray(skills)) {
-            skillsValue = [skills];
+            skillsValue = null;
         }
         
         let causesValue = causes;
@@ -42,6 +40,20 @@ export const updateUserService = async (id, name, gender, dob, about, skills, ca
         throw new Error('Failed to update user');
     }
 };
+
+export const createEventService = async (id, title, details, date, location, start_time, end_time, category, member_limit) => {
+    try {
+        const result = await client.query(
+            "INSERT INTO events (title, details, date, location, start_time, end_time, category, member_limit, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+            [title, details, date, location, start_time, end_time, category, member_limit, id]
+        );
+        return result.rows[0];
+    } catch (error) {
+        console.error('Error in createEventService:', error);
+        throw new Error('Failed to create event');
+    }
+};
+
 
 
 
