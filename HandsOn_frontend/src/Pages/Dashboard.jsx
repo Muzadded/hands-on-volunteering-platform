@@ -18,6 +18,7 @@ const Dashboard = ({ setAuth }) => {
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [userData, setUserData] = useState({
+    id: '',
     name: '',
     email: '',
     gender: '',
@@ -151,6 +152,7 @@ const Dashboard = ({ setAuth }) => {
             : [];
           
           setUserData({
+            id: extractedData.id,
             name: extractedData.name,
             email: extractedData.email,
             gender: extractedData.gender,
@@ -277,7 +279,8 @@ const Dashboard = ({ setAuth }) => {
                     </div>
 
                     <Link
-                      to="/edit-profile"
+                      to={`/edit-profile/${id}`}
+                      state={{ data: userData }}
                       className="w-full mt-6 flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
                     >
                       <span className="mr-2">✏️</span>

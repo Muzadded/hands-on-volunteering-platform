@@ -15,6 +15,9 @@ export const getUserByIdService = async (id) => {
 
 export const updateUserService = async (id, name, gender, dob, about, skills, causes) => {
     try {
+        if (!id) {
+            throw new Error('In Model User ID is required');
+        }
 
         const aboutValue = about === null || about === undefined ? null : about;
         
@@ -79,6 +82,17 @@ export const getHelpPostsService = async () => {
     }
 };
 
+export const getAllEventsService = async () => {
+    try {
+        const result = await client.query(
+            "SELECT * FROM events"
+        );
+        return result.rows;
+    } catch (error) {
+        console.error('Error in getAllEventsService:', error);
+        throw new Error('Failed to get all events');
+    }
+};
 
 
 

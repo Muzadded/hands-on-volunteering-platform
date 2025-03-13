@@ -1,4 +1,4 @@
-import { getUserByIdService, updateUserService, createEventService, createHelpPostService, getHelpPostsService } from "../models/userModel.js";
+import { getUserByIdService, updateUserService, createEventService, createHelpPostService, getHelpPostsService, getAllEventsService } from "../models/userModel.js";
 
 const handleResponse = (res, status, message, data = null) => {
     const isError = status >= 400;
@@ -34,14 +34,19 @@ export const getUserById = async (req, res) => {
 };
 
 export const updateUser = async (req, res, next) => {
-    const {name, gender, dob, about, skills, causes} = req.body;
-    try {
-        console.log("Updating user with ID:", req.params.id);
-        const updateUser = await updateUserService(req.params.id, name, gender, dob, about, skills, causes);
-        if (!updateUser) return handleResponse(res, 404, "User still still not found");
-        handleResponse(res, 200, "User updated successfully", updateUser);
+    const { name, gender, dob, about, skills, causes } = req.body;
+    const userId = req.params.id;
+
+    if (!userId) {
+        return handleResponse(res, 400, "in Controller User ID is required");
     }
-    catch (error) {
+
+    try {
+        console.log("Updating user with ID:", userId);
+        const updateUser = await updateUserService(userId, name, gender, dob, about, skills, causes);
+        if (!updateUser) return handleResponse(res, 404, "User not found");
+        handleResponse(res, 200, "User updated successfully", updateUser);
+    } catch (error) {
         console.error("Error in updateUser:", error);
         handleResponse(res, 500, error.message || "Internal server error");
         next(error);
@@ -93,6 +98,18 @@ export const getAllHelpPosts = async (req, res, next) => {
     }
     catch (error) {
         console.error("Error in getAllHelpPosts:", error);
+        handleResponse(res, 500, error.message || "Internal server error");
+        next(error);
+    }
+}
+
+export const getAllEvents = async (req, res, next) => {
+    try {
+        const events = await getAllEventsService();
+        handleResponse(res, 200, "Events fetched successfully", events);
+    }
+    catch (error) {
+        console.error("Error in getAllEvents:", error);
         handleResponse(res, 500, error.message || "Internal server error");
         next(error);
     }
