@@ -6,6 +6,8 @@ import Login from "../Pages/login";
 import Registration from "../Pages/registration";
 import Dashboard from "../Pages/Dashboard";
 import EditProfile from "../Pages/EditProfile";
+import CreateEvent from "../Pages/CreateEvent";
+import Events from "../Pages/Events";
 
 const AppRoute = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -77,6 +79,24 @@ const AppRoute = () => {
                 element={
                     isAuthenticated ? 
                     <EditProfile setAuth={setAuth} /> : 
+                    <Navigate to="/login" replace />
+                } 
+            />
+
+            <Route 
+                path="/events-feed" 
+                element={
+                    isAuthenticated ? 
+                    <Events setAuth={setAuth} /> : 
+                    <Navigate to="/login" replace />
+                } 
+            />
+
+            <Route 
+                path="/create-event" 
+                element={
+                    isAuthenticated ? 
+                    <CreateEvent setAuth={setAuth} /> : 
                     <Navigate to="/login" replace />
                 } 
             />
