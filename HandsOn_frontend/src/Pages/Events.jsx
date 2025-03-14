@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "./components/SideBar";
 import NavBar from "./components/NavBar";
+import { jwtDecode } from "jwt-decode";
 import {
   FaMapMarkerAlt,
   FaCalendarAlt,
@@ -9,6 +10,7 @@ import {
   FaUsers,
   FaPlus,
   FaFilter,
+  FaSpinner,
 } from "react-icons/fa";
 import axios from "axios";
 
@@ -23,6 +25,8 @@ const Events = ({ setAuth }) => {
     date: "",
   });
   const [activeFilterCount, setActiveFilterCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [joiningEventId, setJoiningEventId] = useState(null);
 
   // Categories for filter
   const categories = [
@@ -58,14 +62,25 @@ const Events = ({ setAuth }) => {
 
   // Fetch events from API
   const fetchEvents = async () => {
+    setLoading(true);
     try {
-      console.log("Fetching all events");
-      
+      //console.log("Fetching all events");
+      let userId = null;
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          userId = decoded.user;
+        } catch (err) {
+          console.error("Error decoding token:", err);
+        }
+      }
       const response = await axios.get(
-        "http://localhost:5000/api/get-events"
+        "http://localhost:5000/api/get-events",
+        { params: { user_id: userId } }
       );
       console.log("API Response:", response.data);
-      
+
       // Check if response.data.data exists and is an array
       if (
         response.data &&
@@ -87,6 +102,8 @@ const Events = ({ setAuth }) => {
       console.error("Error fetching events:", err);
       setEvents([]);
       setFilteredEvents([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,18 +157,6 @@ const Events = ({ setAuth }) => {
     }
   };
 
-  // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return "No date specified";
-    try {
-      const options = { year: "numeric", month: "long", day: "numeric" };
-      return new Date(dateString).toLocaleDateString(undefined, options);
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return dateString;
-    }
-  };
-
   const handleFilter = (e) => {
     e.preventDefault();
     //console.log("Filter form submitted with data:", filterData);
@@ -178,6 +183,78 @@ const Events = ({ setAuth }) => {
     setActiveFilterCount(0);
     //console.log("Filters reset - showing all events");
   };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "No date specified";
+    try {
+      const options = { year: "numeric", month: "long", day: "numeric" };
+      return new Date(dateString).toLocaleDateString(undefined, options);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateString;
+    }
+  };
+
+  const handleJoin = async (event) => {
+
+    setJoiningEventId(event.id);
+    const token = localStorage.getItem("token");
+    const decoded = jwtDecode(token);
+    const user_id = decoded.user;
+    try {
+      const joinData = {
+        event_id: event.id,
+        user_id: user_id,
+        join_date: new Date().toISOString(),
+      };
+      
+      //console.log("Joining event with data:", joinData);
+      
+      const response = await axios.post("http://localhost:5000/api/join-event", joinData);
+      
+      if (response.data.status === 'success') {
+        const updatedEvent = response.data.data.event;
+        updatedEvent.user_joined = true;
+        
+        const updatedEvents = events.map(e => {
+          if (e.id === updatedEvent.id) {
+            return {
+              ...updatedEvent,
+              user_joined: true
+            };
+          }
+          return e;
+        });
+        setEvents(updatedEvents);
+        setFilteredEvents(prevFiltered => 
+          prevFiltered.map(e => {
+            if (e.id === updatedEvent.id) {
+              return {
+                ...updatedEvent,
+                user_joined: true
+              };
+            }
+            return e;
+          })
+        );
+        alert("Event joined successfully!");
+        fetchEvents();
+      } else {
+        alert(response.data.message || "Failed to join event");
+      }
+    } catch (err) {
+      console.error("Error joining event:", err);
+      if (err.response && err.response.data && err.response.data.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Failed to join event. Please try again.");
+      }
+    } finally {
+      setJoiningEventId(null);
+    }
+  };
+
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -300,13 +377,12 @@ const Events = ({ setAuth }) => {
           </div>
 
           {/* Events Display */}
-          {filteredEvents.length === 0 ? (
-            <div
-              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-              role="alert"
-            >
-              <strong className="font-bold">Error: </strong>
-              <span className="block sm:inline">No events found</span>
+          {loading ? (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                Loading events...
+              </h3>
+              <FaSpinner className="animate-spin mx-auto mt-4 text-blue-500 text-3xl" />
             </div>
           ) : filteredEvents.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -328,7 +404,7 @@ const Events = ({ setAuth }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
                 <div
-                  key={event.event_id || event.id}
+                  key={event.id}
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
                 >
                   <div
@@ -383,41 +459,50 @@ const Events = ({ setAuth }) => {
                       <div className="flex items-center text-gray-600">
                         <FaClock className="mr-2 text-gray-400" />
                         <span>
-                          {event.start_time || event.startTime} -{" "}
-                          {event.end_time || event.endTime}
+                          {event.start_time} -{" "}
+                          {event.end_time}
                         </span>
                       </div>
 
                       <div className="flex items-center text-gray-600">
                         <FaUsers className="mr-2 text-gray-400" />
                         <span>
-                          {event.registeredVolunteers || 0}/
-                          {event.member_limit ||
-                            event.maxVolunteers ||
-                            "unlimited"}{" "}
-                          volunteers
+                          {event.total_member }/
+                          {event.member_limit }
                         </span>
                       </div>
                     </div>
 
                     <div className="flex space-x-2">
                       <button
-                        //onClick={() => handleRegister(event.id)}
+                        onClick={() => handleJoin(event)}
                         disabled={
-                          event.registeredVolunteers >=
-                          (event.member_limit || event.maxVolunteers)
+                          event.total_member >= event.member_limit ||
+                          joiningEventId === event.id ||
+                          event.user_joined
                         }
                         className={`flex-1 py-2 px-4 rounded-md transition-colors duration-300 ${
-                          event.registeredVolunteers >=
-                          (event.member_limit || event.maxVolunteers)
+                          event.total_member >= event.member_limit
                             ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : event.user_joined
+                            ? "bg-blue-300 text-white cursor-not-allowed"
+                            : joiningEventId === event.id
+                            ? "bg-blue-400 text-white cursor-wait"
                             : "bg-green-600 text-white hover:bg-green-700"
                         }`}
                       >
-                        {event.registeredVolunteers >=
-                        (event.member_limit || event.maxVolunteers)
-                          ? "Full"
-                          : "Join"}
+                        {joiningEventId === event.id ? (
+                          <span className="flex items-center justify-center">
+                            <FaSpinner className="animate-spin mr-2" />
+                            Joining...
+                          </span>
+                        ) : event.user_joined ? (
+                          "Already Joined"
+                        ) : event.total_member >= event.member_limit ? (
+                          "Full"
+                        ) : (
+                          "Join"
+                        )}
                       </button>
                     </div>
                   </div>

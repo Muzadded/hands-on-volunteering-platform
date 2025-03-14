@@ -1,4 +1,4 @@
-import { getUserByIdService, updateUserService, createEventService, createHelpPostService, getHelpPostsService, getAllEventsService, joinEventService, checkUserJoinedEventService } from "../models/userModel.js";
+import { getUserByIdService, updateUserService, createEventService, createHelpPostService, getHelpPostsService, getAllEventsService, joinEventService } from "../models/userModel.js";
 
 const handleResponse = (res, status, message, data = null) => {
     const isError = status >= 400;
@@ -129,9 +129,9 @@ export const getAllHelpPosts = async (req, res, next) => {
 
 export const getAllEvents = async (req, res, next) => {
     try {
-        const { category, location, date, user_id } = req.query;
+        const { user_id } = req.query;
         
-        const events = await getAllEventsService(category, location, date, user_id);
+        const events = await getAllEventsService(user_id);
         handleResponse(res, 200, "Events fetched successfully", events);
     } catch (error) {
         console.error("Error in getAllEvents:", error);
@@ -160,31 +160,6 @@ export const joinEvent = async (req, res, next) => {
         next(error);
     }
 }
-
-
-export const checkUserJoinedEvent = async (req, res, next) => {
-    try {
-        const { event_id, user_id } = req.query;
-        // Validate required fields
-        if (!event_id) {
-            return handleResponse(res, 400, "Event ID is required");
-        }
-        if (!user_id) {
-            return handleResponse(res, 400, "User ID is required");
-        }
-        
-        const result = await checkUserJoinedEventService(event_id, user_id);
-        handleResponse(res, 200, "User join status checked successfully", result);
-        
-    } catch (error) {
-        console.error("Error in checkUserJoinedEvent:", error);
-        handleResponse(res, 400, error.message || "Failed to check if user joined event");
-        next(error);
-    }
-}
-
-
-
 
 
 // export const test = async (req, res) => {
