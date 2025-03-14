@@ -46,11 +46,26 @@ export const updateUserService = async (id, name, gender, dob, about, skills, ca
 
 export const createEventService = async (id, title, details, date, location, start_time, end_time, category, member_limit) => {
     try {
+        console.log("Creating event with data:", {
+            id, title, details, date, location, start_time, end_time, category, member_limit
+        });
+        
+        // Convert member_limit to integer if it's a string
+        const memberLimit = member_limit ? parseInt(member_limit, 10) : null;
+        
         const result = await client.query(
-            "INSERT INTO events (title, details, date, location, start_time, end_time, category, member_limit, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
-            [title, details, date, location, start_time, end_time, category, member_limit, id]
+            `INSERT INTO events (title, details, date, location, start_time, end_time, category, member_limit, created_by) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+             RETURNING *`,
+            [title, details, date, location, start_time, end_time, category, memberLimit, id]
         );
+        
+        if (result.rows.length === 0) {
+            throw new Error('Failed to create event - no rows returned');
+        }
+        console.log("Event created successfully:", result.rows[0]);
         return result.rows[0];
+
     } catch (error) {
         console.error('Error in createEventService:', error);
         throw new Error('Failed to create event');
