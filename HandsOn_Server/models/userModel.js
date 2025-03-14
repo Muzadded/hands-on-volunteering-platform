@@ -105,9 +105,64 @@ export const getAllEventsService = async () => {
         return result.rows;
     } catch (error) {
         console.error('Error in getAllEventsService:', error);
-        throw new Error('Failed to get all events');
+        throw new Error('Failed to get events');
     }
 };
+
+export const joinEventService = async (event_id, user_id, join_date) => {
+    try {
+
+
+        // Check if event has available spots
+        const eventCheck = await client.query(
+            "SELECT * FROM events WHERE id = $1",
+            [event_id]
+        );
+        const event = eventCheck.rows[0];
+
+        if (event.total_member >= event.member_limit) {
+            throw new Error('Event is already full');
+        }
+
+        // Insert join record
+        const result = await client.query(
+            "INSERT INTO join_event (event_id, user_id, join_date) VALUES ($1, $2, $3) RETURNING *",
+            [event_id, user_id, join_date]
+        );
+        
+        // Update event total members
+        const updatedEvent = await client.query(
+            "UPDATE events SET total_member = total_member + 1 WHERE id = $1 RETURNING *",
+            [event_id]
+        );
+        
+        return {
+            joinData: result.rows[0],
+            event: updatedEvent.rows[0]
+        };
+    } catch (error) {
+        console.error('Error in joinEventService:', error);
+        throw new Error(error.message || 'Failed to join event');
+    }
+};
+
+export const checkUserJoinedEventService = async (event_id, user_id) => {
+    try {
+
+        const result = await client.query(
+            "SELECT * FROM join_event WHERE event_id = $1 AND user_id = $2",
+            [event_id, user_id]
+        );
+        return {
+            hasJoined: result.rows.length > 0,
+            joinData: result.rows.length > 0 ? result.rows[0] : null
+        };
+    } catch (error) {
+        console.error('Error in checkUserJoinedEventService:', error);
+        throw new Error(error.message || 'Failed to check if user joined event');
+    }
+};
+
 
 
 
