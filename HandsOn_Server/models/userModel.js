@@ -97,12 +97,29 @@ export const getHelpPostsService = async () => {
     }
 };
 
-export const getAllEventsService = async () => {
+// Modify getAllEventsService to include information about joined events for a specific user
+export const getAllEventsService = async (user_id = null) => {
     try {
-        const result = await client.query(
-            "SELECT * FROM events"
-        );
-        return result.rows;
+
+        const Query = `
+            SELECT e.*,
+                   COUNT(je.event_id) as registered_volunteers,
+                   ${user_id ? 'EXISTS(SELECT 1 FROM join_event WHERE event_id = e.id AND user_id = $1)' : 'FALSE'} as user_joined
+            FROM events e 
+            LEFT JOIN join_event je ON e.id = je.event_id
+            GROUP BY e.id ORDER BY e.date DESC
+        `;
+        
+        const queryParams = user_id ? [user_id] : [];
+
+        const result = await client.query(Query, queryParams);
+
+        return result.rows.map(event => ({
+            ...event,
+            registeredVolunteers: parseInt(event.registered_volunteers) || 0,
+            member_limit: event.member_limit || null,
+            user_joined: event.user_joined || false
+        }));
     } catch (error) {
         console.error('Error in getAllEventsService:', error);
         throw new Error('Failed to get events');
@@ -111,8 +128,6 @@ export const getAllEventsService = async () => {
 
 export const joinEventService = async (event_id, user_id, join_date) => {
     try {
-
-
         // Check if event has available spots
         const eventCheck = await client.query(
             "SELECT * FROM events WHERE id = $1",
@@ -146,22 +161,6 @@ export const joinEventService = async (event_id, user_id, join_date) => {
     }
 };
 
-export const checkUserJoinedEventService = async (event_id, user_id) => {
-    try {
-
-        const result = await client.query(
-            "SELECT * FROM join_event WHERE event_id = $1 AND user_id = $2",
-            [event_id, user_id]
-        );
-        return {
-            hasJoined: result.rows.length > 0,
-            joinData: result.rows.length > 0 ? result.rows[0] : null
-        };
-    } catch (error) {
-        console.error('Error in checkUserJoinedEventService:', error);
-        throw new Error(error.message || 'Failed to check if user joined event');
-    }
-};
 
 
 
