@@ -129,10 +129,13 @@ export const getAllHelpPosts = async (req, res, next) => {
 
 export const getAllEvents = async (req, res, next) => {
     try {
-        const events = await getAllEventsService();
+        const { category, location, date } = req.query;
+        
+        const events = await getAllEventsService(category, location, date);
+        
+        // Ensure consistent response format
         handleResponse(res, 200, "Events fetched successfully", events);
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Error in getAllEvents:", error);
         handleResponse(res, 500, error.message || "Internal server error");
         next(error);
