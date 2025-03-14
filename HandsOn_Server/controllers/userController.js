@@ -54,18 +54,42 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const createEvent = async (req, res, next) => {
-    const {title, details, date, location, start_time, end_time, category, member_limit} = req.body;
     try {
+        const {
+            title, 
+            details, 
+            date, 
+            location, 
+            start_time, 
+            end_time, 
+            category, 
+            member_limit,
+        } = req.body;
+        
+        // Log the request body for debugging
+        console.log("Create Event Request Body:", req.body);
+        console.log("User ID from params:", req.params.id);
+        
         // Validate required fields
-        if (!title || !details || !date || !location || !start_time || !end_time || !category) {
+        if (!title || !details || !date || !location || !start_time || !end_time || !category || !member_limit) {
             return handleResponse(res, 400, "Missing required fields");
         }
         
-        console.log("Creating event for user with ID:", req.params.id);
-        const newEvent = await createEventService(req.params.id, title, details, date, location, start_time, end_time, category, member_limit);
-        handleResponse(res, 200, "Event created successfully", newEvent);
-    }
-    catch (error) {
+        // Create the event
+        const newEvent = await createEventService(
+            req.params.id, 
+            title, 
+            details, 
+            date, 
+            location, 
+            start_time, 
+            end_time, 
+            category, 
+            member_limit
+        );
+        
+        handleResponse(res, 201, "Event created successfully", newEvent);
+    } catch (error) {
         console.error("Error in createEvent:", error);
         handleResponse(res, 500, error.message || "Internal server error");
         next(error);
