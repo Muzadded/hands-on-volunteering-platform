@@ -27,7 +27,7 @@ const EditProfile = ({ setAuth }) => {
     email: "",
     gender: "",
     dob: "",
-    skills: [],
+    skills: "",
     causes: [],
     about: ""
   });

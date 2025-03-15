@@ -28,29 +28,8 @@ const Dashboard = ({ setAuth }) => {
     about: '',
   });
   
-  const [upcomingEvents] = useState([
-    {
-      id: 1,
-      title: "Beach Cleanup",
-      date: "2023-06-15",
-      location: "Sunset Beach",
-      organization: "Ocean Guardians",
-    },
-    {
-      id: 2,
-      title: "Food Drive",
-      date: "2023-06-22",
-      location: "Community Center",
-      organization: "Food for All",
-    },
-    {
-      id: 3,
-      title: "Tree Planting",
-      date: "2023-07-05",
-      location: "City Park",
-      organization: "Green Earth",
-    },
-  ]);
+  const [joinedEvents, setJoinedEvents] = useState([]);
+
 
   const [stats] = useState({
     upcomingEvents: 3,
@@ -108,7 +87,6 @@ const Dashboard = ({ setAuth }) => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-
         if (!id) {
           console.error('No user ID provided');
           navigate('/login');
@@ -130,38 +108,44 @@ const Dashboard = ({ setAuth }) => {
         
         console.log("API Response:", response.data);
 
-        if (response.data) {
-
+        if (response.data && response.data.data) {
           const extractedData = response.data.data;
-          console.log("Extracted data:", extractedData);
+          //console.log("Extracted data:", extractedData);
+        
+          const user = extractedData.user || {};
           
-          const skills = extractedData && extractedData.skills 
-            ? (Array.isArray(extractedData.skills) 
-                ? extractedData.skills 
-                : (typeof extractedData.skills === 'string' && extractedData.skills
-                    ? extractedData.skills.split(',').map(skill => skill.trim()) 
+          const skills = user && user.skills 
+            ? (Array.isArray(user.skills) 
+                ? user.skills 
+                : (typeof user.skills === 'string' && user.skills
+                    ? user.skills.split(',').map(skill => skill.trim()) 
                     : []))
             : [];
           
-          const causes = extractedData && extractedData.causes 
-            ? (Array.isArray(extractedData.causes) 
-                ? extractedData.causes 
-                : (typeof extractedData.causes === 'string' && extractedData.causes
-                    ? extractedData.causes.split(',').map(cause => cause.trim()) 
+          const causes = user && user.causes 
+            ? (Array.isArray(user.causes) 
+                ? user.causes 
+                : (typeof user.causes === 'string' && user.causes
+                    ? user.causes.split(',').map(cause => cause.trim()) 
                     : []))
             : [];
           
           setUserData({
-            id: extractedData.id,
-            name: extractedData.name,
-            email: extractedData.email,
-            gender: extractedData.gender,
-            dob: extractedData.dob,
+            id: user.user_id,
+            name: user.name ,
+            email: user.email ,
+            gender: user.gender ,
+            dob: user.dob ,
             skills: skills,
             causes: causes,
-            about:extractedData.about,
+            about: user.about ,
           });
           
+          // Set joined events
+          if (extractedData.joinedEvents) {
+            setJoinedEvents(extractedData.joinedEvents);
+            //console.log("Joined events:", extractedData.joinedEvents);
+          }
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
@@ -175,6 +159,24 @@ const Dashboard = ({ setAuth }) => {
 
     fetchUserData();
   }, [id, navigate, setAuth]);
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "No date specified";
+    try {
+      const options = { year: "numeric", month: "long", day: "numeric" };
+      return new Date(dateString).toLocaleDateString(undefined, options);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateString;
+    }
+  };
+
+  // Format time
+  const formatTime = (timeString) => {
+    if (!timeString) return "No time specified";
+    return timeString;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -355,42 +357,44 @@ const Dashboard = ({ setAuth }) => {
                 {/* Upcoming Events Section */}
                 <div className="bg-white rounded-xl shadow-lg p-8 border border-blue-50">
                   <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Upcoming Events</h2>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead>
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Event</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Date</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Location</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Organization</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {upcomingEvents.length > 0 ? (
-                          upcomingEvents.map((event) => (
-                            <tr key={event.id} className="hover:bg-blue-50 transition-colors">
-                              <td className="px-4 py-4 text-sm font-medium text-gray-800">{event.title}</td>
-                              <td className="px-4 py-4 text-sm text-gray-600">{event.date}</td>
-                              <td className="px-4 py-4 text-sm text-gray-600">{event.location}</td>
-                              <td className="px-4 py-4 text-sm text-gray-600">{event.organization}</td>
-                              <td className="px-4 py-4 text-sm">
-                                <button className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                                  View Details
-                                </button>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead>
+                          <tr>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Event</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Date</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Time</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Location</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Category</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {joinedEvents.length > 0 ? (
+                            joinedEvents.map((event) => (
+                              <tr key={event.id} className="hover:bg-blue-50 transition-colors">
+                                <td className="px-4 py-4 text-sm font-medium text-gray-800">{event.title}</td>
+                                <td className="px-4 py-4 text-sm text-gray-600">{formatDate(event.date)}</td>
+                                <td className="px-4 py-4 text-sm text-gray-600">{formatTime(event.start_time)} - {formatTime(event.end_time)}</td>
+                                <td className="px-4 py-4 text-sm text-gray-600">{event.location}</td>
+                                <td className="px-4 py-4 text-sm text-gray-600">{event.category}</td>
+                                <td className="px-4 py-4 text-sm">
+                                  <button className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                                    View Details
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="6" className="px-4 py-4 text-center text-gray-500">
+                                No upcoming events. Browse opportunities to get involved!
                               </td>
                             </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="5" className="px-4 py-4 text-center text-gray-500">
-                              No upcoming events. Browse opportunities to get involved!
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                 </div>
 
                 {/* Recommended Opportunities Section */}

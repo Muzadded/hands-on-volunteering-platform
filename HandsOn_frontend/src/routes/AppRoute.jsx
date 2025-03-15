@@ -8,6 +8,8 @@ import Dashboard from "../Pages/Dashboard";
 import EditProfile from "../Pages/EditProfile";
 import CreateEvent from "../Pages/CreateEvent";
 import Events from "../Pages/Events";
+import HelpReq from "../Pages/HelpReq";
+import CreateHelpPost from "../Pages/CreateHelpPost";
 
 const AppRoute = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -101,7 +103,23 @@ const AppRoute = () => {
                 } 
             />
 
+            <Route 
+                path="/help-request" 
+                element={
+                    isAuthenticated ? 
+                    <HelpReq setAuth={setAuth} /> : 
+                    <Navigate to="/login" replace />
+                } 
+            />
 
+            <Route 
+                path="/create-help-post" 
+                element={
+                    isAuthenticated ? 
+                    <CreateHelpPost setAuth={setAuth} /> : 
+                    <Navigate to="/login" replace />
+                } 
+            />
 
         </Routes>
     );

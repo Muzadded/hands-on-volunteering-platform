@@ -54,18 +54,6 @@ const CreateEvent = ({ setAuth }) => {
     const decoded = jwtDecode(token);
     const userId = decoded.user;
 
-    // Map frontend field names to backend expected field names
-    // const backendData = {
-    //   title: eventData.title,
-    //   details: eventData.details,
-    //   date: eventData.date,
-    //   location: eventData.location,
-    //   start_time: eventData.startTime,
-    //   end_time: eventData.endTime,
-    //   category: eventData.category,
-    //   member_limit: eventData.maxVolunteers,
-    // };
-
     console.log("Decoded user ID:", userId);
     console.log("Sending data to backend:", eventData);
 
