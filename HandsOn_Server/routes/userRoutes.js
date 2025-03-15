@@ -1,5 +1,5 @@
 import express from "express";
-import { getUserById, updateUser, createEvent, getAllEvents, joinEvent, createHelpPost } from "../controllers/userController.js";
+import { getUserById, updateUser, createEvent, getAllEvents, joinEvent, createHelpPost, getAllHelpPosts } from "../controllers/userController.js";
 
 const router = express.Router();
 
@@ -10,6 +10,7 @@ router.post("/create-event/:id", createEvent);
 router.get("/get-events", getAllEvents);
 router.post("/create-help-post/:id", createHelpPost);
 router.post("/join-event", joinEvent);
+router.get("/get-help-posts", getAllHelpPosts);
 
 // router.get("/test", test);
 

@@ -1,4 +1,4 @@
-import { getUserByIdService, updateUserService, createEventService, createHelpPostService, getAllEventsService, joinEventService } from "../models/userModel.js";
+import { getUserByIdService, updateUserService, createEventService, createHelpPostService, getAllEventsService, joinEventService, getHelpPostsService } from "../models/userModel.js";
 
 const handleResponse = (res, status, message, data = null) => {
     const isError = status >= 400;
@@ -135,6 +135,18 @@ export const createHelpPost = async (req, res, next) => {
     }
     catch (error) {
         console.error("Error in createHelpPost:", error);
+        handleResponse(res, 500, error.message || "Internal server error");
+        next(error);
+    }
+}
+
+export const getAllHelpPosts = async (req, res, next) => {
+    try {
+        const helpPosts = await getHelpPostsService();
+        handleResponse(res, 200, "Help posts fetched successfully", helpPosts);
+    }
+    catch (error) {
+        console.error("Error in getAllHelpPosts:", error);
         handleResponse(res, 500, error.message || "Internal server error");
         next(error);
     }
