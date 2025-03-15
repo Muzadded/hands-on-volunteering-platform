@@ -2,14 +2,46 @@ import client from "../db.js";
 
 export const getUserByIdService = async (id) => {
     try {
-        const result = await client.query(
+        // Get user basic information
+        const userResult = await client.query(
             "SELECT user_id, name, gender, dob, email, about, skills, causes FROM users WHERE user_id = $1",
             [id]
         );
-        return result.rows[0];
+
+        if (userResult.rows.length === 0) {
+            throw new Error('User not found');
+        }
+
+        const user = userResult.rows[0];
+
+        // Get events the user has joined with join dates
+        const joinedEventsQuery = `
+            SELECT e.*, je.join_date,
+                   (SELECT COUNT(*) FROM join_event WHERE event_id = e.id) as registered_volunteers
+            FROM events e
+            INNER JOIN join_event je ON e.id = je.event_id
+            WHERE je.user_id = $1
+            ORDER BY e.date DESC
+        `;
+
+        const joinedEventsResult = await client.query(joinedEventsQuery, [id]);
+        
+        // Format the joined events data
+        const joinedEvents = joinedEventsResult.rows.map(event => ({
+            ...event,
+            registeredVolunteers: parseInt(event.registered_volunteers) || 0,
+            member_limit: event.member_limit || null,
+            user_joined: true // Since these are events the user has joined
+        }));
+
+        // Return both user data and joined events
+        return {
+            user: user,
+            joinedEvents: joinedEvents
+        };
     } catch (error) {
         console.error('Error in getUserByIdService:', error);
-        throw new Error('Failed to fetch user');
+        throw new Error(error.message || 'Failed to fetch user');
     }
 };
 
@@ -72,32 +104,6 @@ export const createEventService = async (id, title, details, date, location, sta
     }
 };
 
-export const createHelpPostService = async (id, details, location) => {
-    try {
-        const result = await client.query(
-            "INSERT INTO help_post (created_by, details, location) VALUES ($1, $2, $3) RETURNING *",
-            [id, details, location]
-        );  
-        return result.rows[0];
-    } catch (error) {
-        console.error('Error in createHelpPostService:', error);
-        throw new Error('Failed to create help post');
-    }
-};
-
-export const getHelpPostsService = async () => {
-    try {
-        const result = await client.query(
-            "SELECT * FROM help_post"
-        );
-        return result.rows;
-    } catch (error) {
-        console.error('Error in getHelpPostsService:', error);
-        throw new Error('Failed to get help posts');
-    }
-};
-
-// Modify getAllEventsService to include information about joined events for a specific user
 export const getAllEventsService = async (user_id = null) => {
     try {
 
@@ -158,6 +164,19 @@ export const joinEventService = async (event_id, user_id, join_date) => {
     } catch (error) {
         console.error('Error in joinEventService:', error);
         throw new Error(error.message || 'Failed to join event');
+    }
+};
+
+export const createHelpPostService = async (id, details, location, urgency_level) => {
+    try {
+        const result = await client.query(
+            "INSERT INTO help_post (created_by, details, location, urgency_level) VALUES ($1, $2, $3, $4) RETURNING *",
+            [id, details, location, urgency_level]
+        );
+        return result.rows[0];
+    } catch (error) {
+        console.error('Error in createHelpPostService:', error);
+        throw new Error('Failed to create help post');
     }
 };
 

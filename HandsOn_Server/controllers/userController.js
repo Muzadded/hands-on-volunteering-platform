@@ -1,4 +1,4 @@
-import { getUserByIdService, updateUserService, createEventService, createHelpPostService, getHelpPostsService, getAllEventsService, joinEventService } from "../models/userModel.js";
+import { getUserByIdService, updateUserService, createEventService, createHelpPostService, getAllEventsService, joinEventService } from "../models/userModel.js";
 
 const handleResponse = (res, status, message, data = null) => {
     const isError = status >= 400;
@@ -11,22 +11,13 @@ const handleResponse = (res, status, message, data = null) => {
 
 export const getUserById = async (req, res) => {
     try {
-        const user = await getUserByIdService(req.params.id);
+        const userData = await getUserByIdService(req.params.id);
         
-        if (!user) {
+        if (!userData || !userData.user) {
             return handleResponse(res, 404, "User not found");
         }
 
-        handleResponse(res, 200, "User fetched successfully", {
-            id: user.user_id,
-            name: user.name || '',
-            email: user.email || '',
-            gender: user.gender || '',
-            dob: user.dob || '',
-            skills: user.skills || [],
-            causes: user.causes || [],
-            about: user.about || ''
-        });
+        handleResponse(res, 200, "User fetched successfully", userData);
     } catch (error) {
         console.error("Error in getUserById:", error);
         handleResponse(res, 500, error.message || "Internal server error");
@@ -96,37 +87,6 @@ export const createEvent = async (req, res, next) => {
     }
 }
 
-export const createHelpPost = async (req, res, next) => {
-    const {details, location} = req.body;
-    try {
-        // Validate required fields
-        if (!details || !location) {
-            return handleResponse(res, 400, "Missing required fields");
-        }
-
-        console.log("Creating help post for user with ID:", req.params.id);
-        const newHelpPost = await createHelpPostService(req.params.id, details, location);
-        handleResponse(res, 200, "Help post created successfully", newHelpPost);
-    }
-    catch (error) {
-        console.error("Error in createHelpPost:", error);
-        handleResponse(res, 500, error.message || "Internal server error");
-        next(error);
-    }
-}
-
-export const getAllHelpPosts = async (req, res, next) => {
-    try {
-        const helpPosts = await getHelpPostsService();
-        handleResponse(res, 200, "Help posts fetched successfully", helpPosts);
-    }
-    catch (error) {
-        console.error("Error in getAllHelpPosts:", error);
-        handleResponse(res, 500, error.message || "Internal server error");
-        next(error);
-    }
-}
-
 export const getAllEvents = async (req, res, next) => {
     try {
         const { user_id } = req.query;
@@ -157,6 +117,25 @@ export const joinEvent = async (req, res, next) => {
     catch (error) {
         console.error("Error in joinEvent:", error);
         handleResponse(res, 400, error.message || "Failed to join event");
+        next(error);
+    }
+}
+
+export const createHelpPost = async (req, res, next) => {
+    const {details, location, urgency_level} = req.body;
+    try {
+        //console.log("Creating help post for user with ID:", req.params.id);
+        const newHelpPost = await createHelpPostService(
+            req.params.id, 
+            details, 
+            location, 
+            urgency_level
+        );
+        handleResponse(res, 201, "Help post created successfully", newHelpPost);
+    }
+    catch (error) {
+        console.error("Error in createHelpPost:", error);
+        handleResponse(res, 500, error.message || "Internal server error");
         next(error);
     }
 }
