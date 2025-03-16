@@ -126,11 +126,23 @@ export const createEventService = async (
       ]
     );
 
+    //get the event id
+    const event_id = result.rows[0].id;
+
+    // Insert join record for the creator
+    const result_join_event = await client.query(
+      "INSERT INTO join_event (event_id, user_id, join_date) VALUES ($1, $2, $3) RETURNING *",
+      [event_id, id, date]
+    );
+
     if (result.rows.length === 0) {
       throw new Error("Failed to create event - no rows returned");
     }
     console.log("Event created successfully:", result.rows[0]);
-    return result.rows[0];
+    return {
+      event: result.rows[0],
+      joinData: result_join_event.rows[0],
+    };
   } catch (error) {
     console.error("Error in createEventService:", error);
     throw new Error("Failed to create event");
@@ -304,3 +316,17 @@ export const addCommentToHelpPostService = async (postId, userId, comment) => {
     throw new Error("Failed to add comment");
   }
 };
+
+export const createTeamService = async (name, description, category, isPrivate, created_by) => {
+  try {
+    const result = await client.query(
+      "INSERT INTO teams (name, description, category, is_private, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [name, description, category, isPrivate, created_by]
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error in createTeamService:", error);
+    throw new Error("Failed to create team");
+  }
+};
+

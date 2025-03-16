@@ -8,6 +8,7 @@ import {
   getHelpPostsService,
   getHelpPostByIdService,
   addCommentToHelpPostService,
+  createTeamService,
 } from "../models/userModel.js";
 
 const handleResponse = (res, status, message, data = null) => {
@@ -222,6 +223,19 @@ export const addCommentToHelpPost = async (req, res, next) => {
     next(error);
   }
 };
+
+export const createTeam = async (req, res, next) => {
+  const { name, description, category, isPrivate, created_by } = req.body;
+  try {
+    const newTeam = await createTeamService(name, description, category, isPrivate, created_by);
+    handleResponse(res, 201, "Team created successfully", newTeam);
+  } catch (error) {
+    console.error("Error in createTeam:", error);
+    handleResponse(res, 500, error.message || "Internal server error");
+    next(error);
+  }
+};
+
 
 // export const test = async (req, res) => {
 //     try {
