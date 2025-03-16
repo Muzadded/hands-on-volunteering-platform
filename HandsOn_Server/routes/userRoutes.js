@@ -1,5 +1,15 @@
 import express from "express";
-import { getUserById, updateUser, createEvent, getAllEvents, joinEvent, createHelpPost, getAllHelpPosts } from "../controllers/userController.js";
+import {
+  getUserById,
+  updateUser,
+  createEvent,
+  getAllEvents,
+  joinEvent,
+  createHelpPost,
+  getAllHelpPosts,
+  getHelpPostById,
+  addCommentToHelpPost,
+} from "../controllers/userController.js";
 
 const router = express.Router();
 
@@ -11,9 +21,9 @@ router.get("/get-events", getAllEvents);
 router.post("/create-help-post/:id", createHelpPost);
 router.post("/join-event", joinEvent);
 router.get("/get-help-posts", getAllHelpPosts);
+router.get("/help-post/:postId", getHelpPostById);
+router.post("/help-post/comment", addCommentToHelpPost);
 
 // router.get("/test", test);
 
 export default router;
-
-

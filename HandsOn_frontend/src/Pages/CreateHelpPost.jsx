@@ -12,7 +12,7 @@ const CreateHelpPost = ({ setAuth }) => {
   const [formData, setFormData] = useState({
     details: "",
     location: "",
-    urgency_level: "medium",
+    urgency_level: "default",
   });
 
   const handleSubmit = async (e) => {
@@ -136,8 +136,9 @@ const CreateHelpPost = ({ setAuth }) => {
                   required
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
                 >
-                  <option value="low">Low</option>
+                  <option value="default">Default</option>
                   <option value="medium">Medium</option>
+                  <option value="low">Low</option>
                   <option value="urgent">Urgent</option>
                 </select>
               </div>
