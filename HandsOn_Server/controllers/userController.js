@@ -8,7 +8,12 @@ import {
   getHelpPostsService,
   getHelpPostByIdService,
   addCommentToHelpPostService,
+  createTeamService,
+  getAllTeamsService,
+  joinTeamService,
+  getTeamByIdService,
 } from "../models/userModel.js";
+import jwt from "jsonwebtoken";
 
 const handleResponse = (res, status, message, data = null) => {
   const isError = status >= 400;
@@ -219,6 +224,92 @@ export const addCommentToHelpPost = async (req, res, next) => {
   } catch (error) {
     console.error("Error in addCommentToHelpPost:", error);
     handleResponse(res, 500, error.message || "Internal server error");
+    next(error);
+  }
+};
+
+export const createTeam = async (req, res, next) => {
+  const { name, description, category, isPrivate, created_by } = req.body;
+  try {
+    const newTeam = await createTeamService(name, description, category, isPrivate, created_by);
+    handleResponse(res, 201, "Team created successfully", newTeam);
+  } catch (error) {
+    console.error("Error in createTeam:", error);
+    handleResponse(res, 500, error.message || "Internal server error");
+    next(error);
+  }
+};
+
+export const getAllTeams = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    let userId = null;
+    
+    if (token) {
+      try {
+        const decoded = jwt.decode(token);
+        userId = decoded.user;
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    }
+
+    const teams = await getAllTeamsService(userId);
+    handleResponse(res, 200, "Teams fetched successfully", teams);
+  } catch (error) {
+    console.error("Error in getAllTeams:", error);
+    handleResponse(res, 500, error.message || "Internal server error");
+    next(error);
+  }
+};
+
+export const joinTeam = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    const teamId = req.params.teamId;
+
+    // Validate required fields
+    if (!teamId) {
+      return handleResponse(res, 400, "Team ID is required");
+    }
+    if (!userId) {
+      return handleResponse(res, 400, "User ID is required");
+    }
+
+    const result = await joinTeamService(teamId, userId);
+    handleResponse(res, 200, "Team joined successfully", result);
+  } catch (error) {
+    console.error("Error in joinTeam:", error);
+    handleResponse(res, 500, error.message || "Internal server error");
+    next(error);
+  }
+};
+
+export const getTeamById = async (req, res, next) => {
+  try {
+    const teamId = req.params.teamId;
+    const token = req.headers.authorization?.split(' ')[1];
+    let userId = null;
+
+    if (token) {
+      try {
+        const decoded = jwt.decode(token);
+        userId = decoded.user;
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    }
+
+    const teamData = await getTeamByIdService(teamId, userId);
+    handleResponse(res, 200, "Team details fetched successfully", teamData);
+    
+  } catch (error) {
+    console.error("Error in getTeamById:", error);
+    handleResponse(
+      res,
+      error.message === "Team not found" ? 404 : 500,
+      error.message || "Internal server error"
+    );
     next(error);
   }
 };

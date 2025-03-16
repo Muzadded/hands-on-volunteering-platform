@@ -126,11 +126,23 @@ export const createEventService = async (
       ]
     );
 
+    //get the event id
+    const event_id = result.rows[0].id;
+
+    // Insert join record for the creator
+    const result_join_event = await client.query(
+      "INSERT INTO join_event (event_id, user_id, join_date) VALUES ($1, $2, $3) RETURNING *",
+      [event_id, id, date]
+    );
+
     if (result.rows.length === 0) {
       throw new Error("Failed to create event - no rows returned");
     }
     console.log("Event created successfully:", result.rows[0]);
-    return result.rows[0];
+    return {
+      event: result.rows[0],
+      joinData: result_join_event.rows[0],
+    };
   } catch (error) {
     console.error("Error in createEventService:", error);
     throw new Error("Failed to create event");
@@ -304,3 +316,144 @@ export const addCommentToHelpPostService = async (postId, userId, comment) => {
     throw new Error("Failed to add comment");
   }
 };
+
+export const createTeamService = async (name, description, category, isPrivate, created_by) => {
+  try {
+    const result = await client.query(
+      "INSERT INTO teams (name, description, category, is_private, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [name, description, category, isPrivate, created_by]
+    );
+
+    const team_id = result.rows[0].id;
+    const result_join_team = await client.query(
+      "INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, 'admin') RETURNING *",
+      [team_id, created_by]
+    );
+
+    return {
+      team: result.rows[0],
+      joinData: result_join_team.rows[0],
+    };
+  } catch (error) {
+    console.error("Error in createTeamService:", error);
+    throw new Error("Failed to create team");
+  }
+};
+
+export const getAllTeamsService = async (userId = null) => {
+  try {
+    const query = `
+      SELECT t.*,
+             COUNT(DISTINCT tm.user_id) as member_count,
+             ${userId ? 'EXISTS(SELECT 1 FROM team_members WHERE team_id = t.id AND user_id = $1) as is_member' : 'FALSE as is_member'}
+      FROM teams t
+      LEFT JOIN team_members tm ON t.id = tm.team_id
+      GROUP BY t.id
+      ORDER BY t.created_at DESC
+    `;
+
+    const queryParams = userId ? [userId] : [];
+    const result = await client.query(query, queryParams);
+    
+    return result.rows.map(team => ({
+      ...team,
+      member_count: parseInt(team.member_count) || 0,
+      is_member: team.is_member || false
+    }));
+  } catch (error) {
+    console.error("Error in getAllTeamsService:", error);
+    throw new Error("Failed to get teams");
+  }
+};
+
+export const joinTeamService = async (teamId, userId) => {
+  try {
+    const teamCheck = await client.query(
+      "SELECT * FROM teams WHERE id = $1",
+      [teamId]
+    );
+
+    const team = teamCheck.rows[0];
+
+    // Check if the team is private
+    if (team.is_private) {
+      throw new Error("Cannot join private team directly");
+    }
+
+    // Check if user is already a member
+    const memberCheck = await client.query(
+      "SELECT * FROM team_members WHERE team_id = $1 AND user_id = $2",
+      [teamId, userId]
+    );
+
+    if (memberCheck.rows.length > 0) {
+      throw new Error("User is already a member of this team");
+    }
+
+    const result = await client.query(
+      "INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, 'member') RETURNING *",
+      [teamId, userId]
+    );
+
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error in joinTeamService:", error);
+    throw new Error(error.message || "Failed to join team");
+  }
+};
+
+export const getTeamByIdService = async (teamId, userId = null) => {
+  try {
+    const teamQuery = `
+      SELECT t.*,
+             COUNT(DISTINCT tm.user_id) as member_count,
+             ${userId ? 'EXISTS(SELECT 1 FROM team_members WHERE team_id = t.id AND user_id = $1) as is_member' : 'FALSE as is_member'}
+      FROM teams t
+      LEFT JOIN team_members tm ON t.id = tm.team_id
+      WHERE t.id = ${userId ? '$2' : '$1'}
+      GROUP BY t.id
+    `;
+
+    const teamResult = await client.query(
+      teamQuery,
+      userId ? [userId, teamId] : [teamId]
+    );
+
+    if (teamResult.rows.length === 0) {
+      throw new Error("Team not found");
+    }
+
+    // Get team members with their roles
+    const membersQuery = `
+      SELECT u.user_id, u.name, u.email, tm.role, tm.joined_at
+      FROM team_members tm
+      JOIN users u ON tm.user_id = u.user_id
+      WHERE tm.team_id = $1
+      ORDER BY 
+        CASE 
+          WHEN tm.role = 'admin' THEN 1
+          WHEN tm.role = 'moderator' THEN 2
+          ELSE 3
+        END,
+        tm.joined_at ASC
+    `;
+
+    const membersResult = await client.query(membersQuery, [teamId]);
+
+    return {
+      ...teamResult.rows[0],
+      members: membersResult.rows,
+      member_count: parseInt(teamResult.rows[0].member_count) || 0,
+      is_member: teamResult.rows[0].is_member || false
+    };
+  } catch (error) {
+    console.error("Error in getTeamByIdService:", error);
+    throw new Error(error.message || "Failed to get team details");
+  }
+};
+
+
+
+
+
+
