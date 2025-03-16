@@ -34,7 +34,6 @@ export const getUserByIdService = async (id) => {
       user_joined: true, // Since these are events the user has joined
     }));
 
-    // Return both user data and joined events
     return {
       user: user,
       joinedEvents: joinedEvents,
@@ -108,7 +107,6 @@ export const createEventService = async (
       member_limit,
     });
 
-    // Convert member_limit to integer if it's a string
     const memberLimit = member_limit ? parseInt(member_limit, 10) : null;
 
     const result = await client.query(
@@ -225,10 +223,9 @@ export const createHelpPostService = async (
 
 export const getHelpPostsService = async () => {
   try {
-      const result = await client.query(`
-          SELECT hp.*, u.name as requester_name, 
-                 (SELECT COUNT(*) FROM help_post_comments WHERE help_post_comments.help_post_id = hp.help_post_id) as comment_count,
-                 (SELECT COUNT(*) FROM help_offers WHERE help_offers.help_post_id = hp.help_post_id) as offer_count
+    const result = await client.query(`
+          SELECT hp.*, u.name as requester_name,
+                 (SELECT COUNT(*) FROM help_post_comments WHERE help_post_comments.help_post_id = hp.help_post_id) as comment_count
           FROM help_post hp
           JOIN users u ON hp.created_by = u.user_id
           ORDER BY
@@ -240,10 +237,70 @@ export const getHelpPostsService = async () => {
               END,
               hp.created_at DESC
       `);
-      return result.rows;
+    return result.rows;
   } catch (error) {
-      console.error('Error in getHelpPostsService:', error);
-      throw new Error('Failed to get help posts');
+    console.error("Error in getHelpPostsService:", error);
+    throw new Error("Failed to get help posts");
   }
 };
 
+export const getHelpPostByIdService = async (postId) => {
+  try {
+    const postResult = await client.query(
+      `
+          SELECT hp.*, u.name as requester_name
+          FROM help_post hp
+          JOIN users u ON hp.created_by = u.user_id
+          WHERE hp.help_post_id = $1
+      `,
+      [postId]
+    );
+
+    if (postResult.rows.length === 0) {
+      throw new Error("Help post not found");
+    }
+
+    const commentsResult = await client.query(
+      `
+          SELECT hpc.*, u.name as commenter_name
+          FROM help_post_comments hpc
+          JOIN users u ON hpc.user_id = u.user_id
+          WHERE hpc.help_post_id = $1
+          ORDER BY hpc.created_at ASC
+      `,
+      [postId]
+    );
+
+    return {
+      post: postResult.rows[0],
+      comments: commentsResult.rows,
+    };
+  } catch (error) {
+    console.error("Error in getHelpPostByIdService:", error);
+    throw new Error(error.message || "Failed to get help post details");
+  }
+};
+
+export const addCommentToHelpPostService = async (postId, userId, comment) => {
+  try {
+    const result = await client.query(
+      "INSERT INTO help_post_comments (help_post_id, user_id, comment) VALUES ($1, $2, $3) RETURNING *",
+      [postId, userId, comment]
+    );
+
+    // Get the commenter's name
+    const userResult = await client.query(
+      "SELECT name FROM users WHERE user_id = $1",
+      [userId]
+    );
+
+    const commentData = result.rows[0];
+    return {
+      ...commentData,
+      commenter_name: userResult.rows[0]?.name || "Unknown User",
+    };
+  } catch (error) {
+    console.error("Error in addCommentToHelpPostService:", error);
+    throw new Error("Failed to add comment");
+  }
+};
