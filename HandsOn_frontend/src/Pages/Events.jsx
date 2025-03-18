@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "./components/SideBar";
 import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
 import { jwtDecode } from "jwt-decode";
 import {
   FaMapMarkerAlt,
@@ -30,9 +31,9 @@ const Events = ({ setAuth }) => {
 
   // Categories for filter
   const categories = [
-    "All Categories",
     "Education",
     "Environment",
+    "Social Activity",
     "Healthcare",
     "Animal Welfare",
     "Community Development",
@@ -41,6 +42,8 @@ const Events = ({ setAuth }) => {
     "Disaster Relief",
     "Arts & Culture",
     "Food Security",
+    "Sports",
+    "Other",
   ];
 
   const locations = [
@@ -265,13 +268,13 @@ const Events = ({ setAuth }) => {
       />
 
       <div
-        className={`flex-1 transition-all duration-300 ${
+        className={`flex-1 transition-all duration-300 flex flex-col ${
           isSidebarCollapsed ? "ml-20" : "ml-64"
         }`}
       >
         <NavBar />
 
-        <div className="max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8 flex-grow">
           {/* Header with Create Event Button */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div>
@@ -511,6 +514,7 @@ const Events = ({ setAuth }) => {
             </div>
           )}
         </div>
+        <Footer />
       </div>
     </div>
   );

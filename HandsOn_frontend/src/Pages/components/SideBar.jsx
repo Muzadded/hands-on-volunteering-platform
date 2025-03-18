@@ -2,12 +2,10 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaHome,
-  FaUserCircle,
   FaClipboardList,
-  FaChartLine,
   FaBell,
-  FaCog,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaUsers
 } from 'react-icons/fa';
 
 const SideBar = ({ isSidebarCollapsed, setIsSidebarCollapsed, setAuth }) => {
@@ -36,11 +34,6 @@ const SideBar = ({ isSidebarCollapsed, setIsSidebarCollapsed, setAuth }) => {
       path: '/dashboard'
     },
     { 
-      icon: <FaUserCircle size={20} />, 
-      text: 'Profile', 
-      path: '/edit-profile'
-    },
-    { 
       icon: <FaClipboardList size={20} />, 
       text: 'Events', 
       path: '/events-feed'
@@ -52,16 +45,10 @@ const SideBar = ({ isSidebarCollapsed, setIsSidebarCollapsed, setAuth }) => {
       path: '/help-request'
     },
     { 
-      icon: <FaCog size={20} />, 
+      icon: <FaUsers size={20} />, 
       text: 'Teams', 
       path: '/teams'
     },
-    { 
-        icon: <FaChartLine size={20} />, 
-        text: 'Impact', 
-        path: '/impact'
-    },
-    
   ];
 
   return (

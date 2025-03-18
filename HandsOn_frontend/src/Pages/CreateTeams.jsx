@@ -18,14 +18,19 @@ const CreateTeams = ({ setAuth }) => {
   });
 
   const categories = [
-    "Environmental",
-    "Social Justice",
     "Education",
+    "Environment",
+    "Social Activity",
     "Healthcare",
     "Animal Welfare",
-    "Community Service",
-    "Arts & Culture",
+    "Community Development",
+    "Elderly Care",
+    "Youth Empowerment",
     "Disaster Relief",
+    "Arts & Culture",
+    "Food Security",
+    "Sports",
+    "Other",
   ];
 
   const handleSubmit = async (e) => {

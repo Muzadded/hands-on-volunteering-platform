@@ -280,9 +280,6 @@ const HelpReq = ({ setAuth }) => {
                                   <span className="text-sm font-medium text-gray-900">
                                     {comment.commenter_name}
                                   </span>
-                                  <span className="text-xs text-gray-500">
-                                    {formatDate(comment.created_at)}
-                                  </span>
                                 </div>
                                 <p className="mt-1 text-sm text-gray-600">
                                   {comment.comment}

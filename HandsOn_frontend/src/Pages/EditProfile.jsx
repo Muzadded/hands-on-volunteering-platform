@@ -41,7 +41,7 @@ const EditProfile = ({ setAuth }) => {
           email: prevData.email,
           gender: prevData.gender,
           dob: prevData.dob,
-          skills: prevData.skills,
+          skills: Array.isArray(prevData.skills) ? prevData.skills.join(', ') : prevData.skills || '',
           causes: prevData.causes,
           about: prevData.about
         };
@@ -59,7 +59,18 @@ const EditProfile = ({ setAuth }) => {
     e.preventDefault();
     const id = prevData?.id;
 
-    axios.put(`http://localhost:5000/api/users/${id}`, formData)
+    const updateSkills = formData.skills
+      .split(',')
+      .map(skill => skill.trim())
+      .filter(skill => skill.length > 0)
+      .join(',');
+
+    const updatedFormData = {
+      ...formData,
+      skills: updateSkills
+    };
+
+    axios.put(`http://localhost:5000/api/users/${id}`, updatedFormData)
     .then((res) => {
       console.log(res);
       alert("Profile updated successfully");
@@ -175,7 +186,7 @@ const EditProfile = ({ setAuth }) => {
                   <div className="space-y-4">
                     <label className="text-gray-700 font-medium flex items-center">
                       <FaBookOpen className="mr-2" />
-                      Skills
+                      Skills (comma-separated)
                     </label>
                     <div className="flex gap-2">
                     <input

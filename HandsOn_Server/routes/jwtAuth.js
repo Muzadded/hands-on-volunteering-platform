@@ -9,7 +9,7 @@ const router = Router();
 //Register
 router.post("/register", async (req, res) => {
   try {
-    const {name, gender, dob, email, password, about, skills, causes, password_confirmation} = req.body;
+    const {name, gender, dob, email, password, about, skills, causes} = req.body;
 
     const user = await client.query("SELECT * FROM users WHERE email = $1", [email]);
 

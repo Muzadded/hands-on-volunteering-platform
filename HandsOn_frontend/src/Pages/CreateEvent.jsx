@@ -22,6 +22,7 @@ const CreateEvent = ({ setAuth }) => {
   const categories = [
     "Education",
     "Environment",
+    "Social Activity",
     "Healthcare",
     "Animal Welfare",
     "Community Development",
@@ -30,6 +31,8 @@ const CreateEvent = ({ setAuth }) => {
     "Disaster Relief",
     "Arts & Culture",
     "Food Security",
+    "Sports",
+    "Other",
   ];
 
   const handleChange = (e) => {

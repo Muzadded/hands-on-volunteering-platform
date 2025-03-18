@@ -10,6 +10,9 @@ import CreateEvent from "../Pages/CreateEvent";
 import Events from "../Pages/Events";
 import HelpReq from "../Pages/HelpReq";
 import CreateHelpPost from "../Pages/CreateHelpPost";
+import Teams from "../Pages/Teams";
+import CreateTeams from "../Pages/CreateTeams";
+import TeamDash from "../Pages/TeamDash";
 
 const AppRoute = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -120,6 +123,31 @@ const AppRoute = () => {
                     <Navigate to="/login" replace />
                 } 
             />
+             <Route 
+                path="/teams" 
+                element={
+                    isAuthenticated ? 
+                    <Teams setAuth={setAuth} /> : 
+                    <Navigate to="/login" replace />
+                } 
+            />
+              <Route 
+                path="/create-team" 
+                element={
+                    isAuthenticated ? 
+                    <CreateTeams setAuth={setAuth} /> : 
+                    <Navigate to="/login" replace />
+                } 
+            />
+            <Route
+                path="/team-details/:id"
+                element={
+                    isAuthenticated ?
+                    <TeamDash setAuth={setAuth} /> :
+                    <Navigate to="/login" replace />
+                }
+            />
+            <Route path="/team/:teamId" element={<TeamDash setAuth={setAuth} />} />
 
         </Routes>
     );

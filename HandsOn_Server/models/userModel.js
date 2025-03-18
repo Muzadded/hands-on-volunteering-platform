@@ -84,9 +84,13 @@ export const updateUserService = async (
 
     const aboutValue = about === null || about === undefined ? null : about;
 
+    // Handle skills as a string
     let skillsValue = skills;
-    if (skills === null || skills === undefined) {
+    if (skills === null || skills === undefined || skills === '') {
       skillsValue = null;
+    } else if (typeof skills !== 'string') {
+      // If somehow skills is not a string, convert it to one
+      skillsValue = String(skills);
     }
 
     let causesValue = causes;

@@ -191,7 +191,7 @@ const Dashboard = ({ setAuth }) => {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-gray-600">Date of Birth</span>
-                          <span className="text-gray-800 font-medium">{userData.dob}</span>
+                          <span className="text-gray-800 font-medium">{formatDate(userData.dob)}</span>
                         </div>
                       </div>
                     </div>

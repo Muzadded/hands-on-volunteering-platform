@@ -49,15 +49,20 @@ export const updateUser = async (req, res, next) => {
 
   try {
     console.log("Updating user with ID:", userId);
+    
+    // Ensure skills is a string
+    const processedSkills = skills ? String(skills) : null;
+    
     const updateUser = await updateUserService(
       userId,
       name,
       gender,
       dob,
       about,
-      skills,
+      processedSkills,
       causes
     );
+    
     if (!updateUser) return handleResponse(res, 404, "User not found");
     handleResponse(res, 200, "User updated successfully", updateUser);
   } catch (error) {
