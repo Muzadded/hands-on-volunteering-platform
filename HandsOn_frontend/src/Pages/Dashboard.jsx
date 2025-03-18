@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
 import axios from "axios";
 import {
   FaCalendarAlt,
@@ -8,7 +9,7 @@ import {
   FaCheckCircle,
   FaStar,
   FaClock,
-  FaMapMarkerAlt
+  FaLock
 } from "react-icons/fa";
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import SideBar from './components/SideBar';
@@ -29,7 +30,7 @@ const Dashboard = ({ setAuth }) => {
   });
   
   const [joinedEvents, setJoinedEvents] = useState([]);
-
+  const [joinedTeams, setJoinedTeams] = useState([]);
 
   const [stats] = useState({
     upcomingEvents: 3,
@@ -39,49 +40,6 @@ const Dashboard = ({ setAuth }) => {
     completedEvents: 12,
     impactScore: 850
   });
-
-  const [recommendedEvents] = useState([
-    {
-      id: 1,
-      title: "Literacy Tutoring Program",
-      description: "Help adults improve their reading and writing skills in a supportive environment",
-      date: "2024-03-15",
-      time: "14:00-16:00",
-      location: "City Library, Room 204",
-      category: "Education",
-      image: "gradient-to-r from-blue-500 to-blue-600"
-    },
-    {
-      id: 2,
-      title: "Beach Cleanup Drive",
-      description: "Join us in cleaning up the coastline and protecting marine life",
-      date: "2024-03-20",
-      time: "09:00-12:00",
-      location: "Sunset Beach, North End",
-      category: "Environmental",
-      image: "gradient-to-r from-green-500 to-green-600"
-    },
-    {
-      id: 3,
-      title: "Senior Care Support",
-      description: "Provide companionship and assistance to elderly residents",
-      date: "2024-03-18",
-      time: "10:00-13:00",
-      location: "Golden Age Care Home",
-      category: "Healthcare",
-      image: "gradient-to-r from-purple-500 to-purple-600"
-    },
-    {
-      id: 4,
-      title: "Food Bank Distribution",
-      description: "Help sort and distribute food to families in need",
-      date: "2024-03-22",
-      time: "08:00-11:00",
-      location: "Community Center",
-      category: "Food Security",
-      image: "gradient-to-r from-orange-500 to-orange-600"
-    }
-  ]);
 
   // Fetch user data
   useEffect(() => {
@@ -110,8 +68,7 @@ const Dashboard = ({ setAuth }) => {
 
         if (response.data && response.data.data) {
           const extractedData = response.data.data;
-          //console.log("Extracted data:", extractedData);
-        
+          
           const user = extractedData.user || {};
           
           const skills = user && user.skills 
@@ -132,19 +89,23 @@ const Dashboard = ({ setAuth }) => {
           
           setUserData({
             id: user.user_id,
-            name: user.name ,
-            email: user.email ,
-            gender: user.gender ,
-            dob: user.dob ,
+            name: user.name,
+            email: user.email,
+            gender: user.gender,
+            dob: user.dob,
             skills: skills,
             causes: causes,
-            about: user.about ,
+            about: user.about,
           });
           
           // Set joined events
           if (extractedData.joinedEvents) {
             setJoinedEvents(extractedData.joinedEvents);
-            //console.log("Joined events:", extractedData.joinedEvents);
+          }
+
+          // Set joined teams
+          if (extractedData.joinedTeams) {
+            setJoinedTeams(extractedData.joinedTeams);
           }
         }
       } catch (err) {
@@ -162,14 +123,12 @@ const Dashboard = ({ setAuth }) => {
 
   // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return "No date specified";
-    try {
-      const options = { year: "numeric", month: "long", day: "numeric" };
-      return new Date(dateString).toLocaleDateString(undefined, options);
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return dateString;
-    }
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   // Format time
@@ -179,8 +138,8 @@ const Dashboard = ({ setAuth }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="flex">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      <div className="flex flex-1">
         <SideBar 
           isSidebarCollapsed={isSidebarCollapsed}
           setIsSidebarCollapsed={setIsSidebarCollapsed}
@@ -356,7 +315,7 @@ const Dashboard = ({ setAuth }) => {
 
                 {/* Upcoming Events Section */}
                 <div className="bg-white rounded-xl shadow-lg p-8 border border-blue-50">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Upcoming Events</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Events</h2>
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead>
@@ -366,7 +325,6 @@ const Dashboard = ({ setAuth }) => {
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Time</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Location</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Category</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -378,11 +336,6 @@ const Dashboard = ({ setAuth }) => {
                                 <td className="px-4 py-4 text-sm text-gray-600">{formatTime(event.start_time)} - {formatTime(event.end_time)}</td>
                                 <td className="px-4 py-4 text-sm text-gray-600">{event.location}</td>
                                 <td className="px-4 py-4 text-sm text-gray-600">{event.category}</td>
-                                <td className="px-4 py-4 text-sm">
-                                  <button className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                                    View Details
-                                  </button>
-                                </td>
                               </tr>
                             ))
                           ) : (
@@ -397,36 +350,56 @@ const Dashboard = ({ setAuth }) => {
                     </div>
                 </div>
 
-                {/* Recommended Opportunities Section */}
-                <div className="bg-white rounded-xl shadow-lg p-8 border border-blue-50">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6">Recommended For You</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {recommendedEvents.map((event) => (
-                      <div key={event.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden">
-                        <div className={`h-24 bg-${event.image} flex items-center justify-center`}>
-                          <span className="text-white text-lg font-semibold">{event.category}</span>
-                        </div>
-                        <div className="p-6">
-                          <h3 className="text-lg font-bold text-gray-800 mb-2">{event.title}</h3>
-                          <p className="text-gray-600 text-sm mb-4">{event.description}</p>
-                          <div className="flex items-center text-gray-500 text-sm mb-2">
-                            <FaCalendarAlt className="mr-2" />
-                            <span>{event.date}</span>
-                          </div>
-                          <div className="flex items-center text-gray-500 text-sm mb-2">
-                            <FaClock className="mr-2" />
-                            <span>{event.time}</span>
-                          </div>
-                          <div className="flex items-center text-gray-500 text-sm mb-4">
-                            <FaMapMarkerAlt className="mr-2" />
-                            <span>{event.location}</span>
-                          </div>
-                          <button className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                            Apply
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                {/* Joined Teams Section */}
+                <div className="bg-white rounded-xl shadow-lg p-8 border border-blue-50 mt-8">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Teams</h2>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Team Name</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Category</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Your Role</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Members</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Joined Date</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Created By</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {joinedTeams.length > 0 ? (
+                          joinedTeams.map((team) => (
+                            <tr key={team.id} className="hover:bg-blue-50 transition-colors">
+                              <td className="px-4 py-4 text-sm font-medium text-gray-800">
+                                {team.name}
+                                {team.is_private && (
+                                  <FaLock className="inline-block ml-2 text-gray-400" />
+                                )}
+                              </td>
+                              <td className="px-4 py-4 text-sm text-gray-600">{team.category}</td>
+                              <td className="px-4 py-4 text-sm text-gray-600 capitalize">{team.role}</td>
+                              <td className="px-4 py-4 text-sm text-gray-600">{team.member_count}</td>
+                              <td className="px-4 py-4 text-sm text-gray-600">{formatDate(team.joined_at)}</td>
+                              <td className="px-4 py-4 text-sm text-gray-600">{team.created_by_name}</td>
+                              <td className="px-4 py-4 text-sm">
+                                <button
+                                  onClick={() => navigate(`/team/${team.id}`)}
+                                  className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                                >
+                                  View Details
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="7" className="px-4 py-4 text-center text-gray-500">
+                              You haven't joined any teams yet. Browse teams to get involved!
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
@@ -434,6 +407,7 @@ const Dashboard = ({ setAuth }) => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

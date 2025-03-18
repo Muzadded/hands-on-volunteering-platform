@@ -26,6 +26,23 @@ export const getUserByIdService = async (id) => {
 
     const joinedEventsResult = await client.query(joinedEventsQuery, [id]);
 
+    // Get teams the user has joined
+    const joinedTeamsQuery = `
+      SELECT 
+        t.*,
+        tm.role,
+        tm.joined_at,
+        COUNT(DISTINCT tm2.user_id) as member_count,
+        (SELECT name FROM users WHERE user_id = t.created_by) as created_by_name
+      FROM teams t
+      INNER JOIN team_members tm ON t.id = tm.team_id AND tm.user_id = $1
+      LEFT JOIN team_members tm2 ON t.id = tm2.team_id
+      GROUP BY t.id, tm.role, tm.joined_at
+      ORDER BY tm.joined_at DESC
+    `;
+
+    const joinedTeamsResult = await client.query(joinedTeamsQuery, [id]);
+
     // Format the joined events data
     const joinedEvents = joinedEventsResult.rows.map((event) => ({
       ...event,
@@ -34,9 +51,16 @@ export const getUserByIdService = async (id) => {
       user_joined: true, // Since these are events the user has joined
     }));
 
+    // Format the joined teams data
+    const joinedTeams = joinedTeamsResult.rows.map(team => ({
+      ...team,
+      member_count: parseInt(team.member_count) || 0
+    }));
+
     return {
       user: user,
       joinedEvents: joinedEvents,
+      joinedTeams: joinedTeams
     };
   } catch (error) {
     console.error("Error in getUserByIdService:", error);

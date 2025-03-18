@@ -313,7 +313,6 @@ export const getTeamById = async (req, res, next) => {
     next(error);
   }
 };
-
 // export const test = async (req, res) => {
 //     try {
 //         console.log("Test endpoint called");
