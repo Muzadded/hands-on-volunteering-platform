@@ -64,7 +64,7 @@ CREATE TABLE users (
 
 -- Events Table
 CREATE TABLE events (
-    id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,\n
     title character varying(255) NOT NULL,
     details TEXT,
     date DATE,
