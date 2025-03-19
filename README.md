@@ -64,17 +64,17 @@ CREATE TABLE users (
 
 -- Events Table
 CREATE TABLE events (
-    id SERIAL PRIMARY KEY,\n
-    title character varying(255) NOT NULL,
-    details TEXT,
-    date DATE,
-    location character varying(255),
-    start_time TIME Without time zone,
-    end_time TIME Without time zone,
-    category character varying(255),
-    member_limit INTEGER NOt Null,
-    total_member INTEGER DEFAULT 1,
-    created_by INTEGER REFERENCES users(user_id)
+    id SERIAL PRIMARY KEY,  
+    title character varying(255) NOT NULL,  
+    details TEXT,  
+    date DATE,  
+    location character varying(255),  
+    start_time TIME Without time zone,  
+    end_time TIME Without time zone,  
+    category character varying(255),  
+    member_limit INTEGER NOt Null,  
+    total_member INTEGER DEFAULT 1,  
+    created_by INTEGER REFERENCES users(user_id)  
 );
 
 -- Join Event Table
