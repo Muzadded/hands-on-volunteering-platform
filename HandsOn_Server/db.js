@@ -5,8 +5,8 @@ const client = new Client({
     host: 'localhost',
     port: 5432,
     user: 'postgres',
-    password: '1234',
-    database: 'handson_db',
+    password: '12345',
+    database: 'HandsOn',
 });
 
 client.connect((err) => {
