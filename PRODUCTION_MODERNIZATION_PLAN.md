@@ -2,7 +2,7 @@
 
 **Project:** HandsOn — Community-Driven Social Volunteering Platform  
 **Purpose:** Evolve the student-life MVP into a production-ready, resume-showcase product  
-**Status:** Plan only — no implementation started  
+**Status:** Phase 3 complete — ready for Phase 4  
 **Estimated timeline:** ~8 weeks (part-time) or ~4–5 weeks (focused full-time)
 
 ---
@@ -241,32 +241,32 @@ After shipping, the project should support this story in interviews:
 
 #### Backend
 
-- [ ] Move secrets to env: `DATABASE_URL`, `JWT_SECRET`, `PORT`, `CLIENT_ORIGIN`, `NODE_ENV`
-- [ ] Remove hardcoded credentials from `HandsOn_Server/db.js`
-- [ ] Replace single `pg.Client` with `pg.Pool`
-- [ ] Mount auth middleware on all sensitive `/api` routes
-- [ ] Enforce subject == resource owner (fix IDOR on profile/event/help/team/join/comment)
-- [ ] Standardize `Authorization: Bearer`; remove all `jwt.decode` usage
-- [ ] Never `SELECT *` from users; strip `password` from all DTOs
-- [ ] Add `helmet`, CORS allowlist, `express-rate-limit` on `/auth`, body size limits
-- [ ] Central Express error middleware + consistent response envelope
-- [ ] Fix event capacity: one source of truth; transactional joins
-- [ ] Add DB constraints: `UNIQUE (event_id, user_id)`, `UNIQUE (team_id, user_id)`
+- [x] Move secrets to env: `DATABASE_URL`, `JWT_SECRET`, `PORT`, `CLIENT_ORIGIN`, `NODE_ENV`
+- [x] Remove hardcoded credentials from `HandsOn_Server/db.js`
+- [x] Replace single `pg.Client` with `pg.Pool`
+- [x] Mount auth middleware on all sensitive `/api` routes
+- [x] Enforce subject == resource owner (fix IDOR on profile/event/help/team/join/comment)
+- [x] Standardize `Authorization: Bearer`; remove all `jwt.decode` usage
+- [x] Never `SELECT *` from users; strip `password` from all DTOs
+- [x] Add `helmet`, CORS allowlist, `express-rate-limit` on `/auth`, body size limits
+- [x] Central Express error middleware + consistent response envelope
+- [x] Fix event capacity: one source of truth; transactional joins
+- [x] Add DB constraints: `UNIQUE (event_id, user_id)`, `UNIQUE (team_id, user_id)`
 
 #### Frontend
 
-- [ ] Create `src/api/client.js` with `VITE_API_URL`, Bearer injection, 401 → logout
-- [ ] Replace every hardcoded `localhost:5000` call
-- [ ] Fix team routing to one protected path: `/teams/:teamId`
-- [ ] Align Dashboard “View Details” links with TeamDash param name
-- [ ] Auth bootstrap gate (no flash redirect to login); validate JWT `exp`
-- [ ] Add `.env.example` for frontend and backend (never commit real `.env`)
+- [x] Create `src/api/client.js` with `VITE_API_URL`, Bearer injection, 401 → logout
+- [x] Replace every hardcoded `localhost:5000` call
+- [x] Fix team routing to one protected path: `/teams/:teamId`
+- [x] Align Dashboard “View Details” links with TeamDash param name
+- [x] Auth bootstrap gate (no flash redirect to login); validate JWT `exp`
+- [x] Add `.env.example` for frontend and backend (never commit real `.env`)
 
 #### Data
 
-- [ ] Introduce `node-pg-migrate` (or Knex)
-- [ ] Convert README schema into versioned migrations
-- [ ] Add seed script with demo users, events, teams for portfolio demos
+- [x] Introduce `node-pg-migrate` (or Knex)
+- [x] Convert README schema into versioned migrations
+- [x] Add seed script with demo users, events, teams for portfolio demos
 
 **Exit criteria:** authenticated API only; no password leakage; env-driven config; team detail works end-to-end.
 
@@ -297,14 +297,14 @@ After shipping, the project should support this story in interviews:
 
 #### Code structure
 
-- [ ] Split `userController.js` / `userModel.js` into domains: `users`, `events`, `helpPosts`, `teams`
-- [ ] Introduce service layer for business rules (capacity, privacy, ownership)
-- [ ] Zod (or Joi) validation per route
-- [ ] Incremental TypeScript for config, validators, and new modules
-- [ ] Shared ESLint + Prettier; add `format` script; make `lint` meaningful
-- [ ] `GET /health` for deploy probes
-- [ ] Structured logging with `pino` + request id
-- [ ] Light OpenAPI/Swagger for `/api/v1`
+- [x] Split `userController.js` / `userModel.js` into domains: `users`, `events`, `helpPosts`, `teams`
+- [x] Introduce service layer for business rules (capacity, privacy, ownership)
+- [x] Zod (or Joi) validation per route
+- [x] Incremental TypeScript for config, validators, and new modules
+- [x] Shared ESLint + Prettier; add `format` script; make `lint` meaningful
+- [x] `GET /health` for deploy probes
+- [x] Structured logging with `pino` + request id
+- [x] Light OpenAPI/Swagger for `/api/v1`
 
 **Exit criteria:** layered backend; validated inputs; health endpoint; no god-files.
 
@@ -324,10 +324,10 @@ After shipping, the project should support this story in interviews:
 
 #### Shared UI kit
 
-- [ ] `Button`, `Input`, `Textarea`, `Select`, `Badge`
-- [ ] `EmptyState`, `Spinner` / skeletons, `Alert`, `Modal`
-- [ ] Toast system — replace all `alert()`
-- [ ] `AppShell`: responsive sidebar → **drawer on mobile**; top bar with user menu
+- [x] `Button`, `Input`, `Textarea`, `Select`, `Badge`
+- [x] `EmptyState`, `Spinner` / skeletons, `Alert`, `Modal`
+- [x] Toast system — replace all `alert()`
+- [x] `AppShell`: responsive sidebar → **drawer on mobile**; top bar with user menu
 
 #### Page priorities
 
@@ -339,13 +339,13 @@ After shipping, the project should support this story in interviews:
 
 #### UX / a11y checklist
 
-- [ ] `htmlFor` / `id` on form controls
-- [ ] `aria-label` on icon-only buttons
-- [ ] Tables collapse to cards on small screens
-- [ ] Fix role badge template literal bug in `TeamDash.jsx`
-- [ ] Edit profile fetches by `:id` (not only router state); self-only authorization
-- [ ] Fix Events category filter (`All Categories` mismatch)
-- [ ] Remove or fix Footer stub links and duplicated registration options
+- [x] `htmlFor` / `id` on form controls
+- [x] `aria-label` on icon-only buttons
+- [x] Tables collapse to cards on small screens
+- [x] Fix role badge template literal bug in `TeamDash.jsx`
+- [x] Edit profile fetches by `:id` (not only router state); self-only authorization
+- [x] Fix Events category filter (`All Categories` mismatch)
+- [x] Remove or fix Footer stub links and duplicated registration options
 
 **Exit criteria:** usable on phone; one visual language; no deceptive UI chrome.
 
@@ -357,37 +357,37 @@ After shipping, the project should support this story in interviews:
 
 #### A. Skills / causes matching (primary)
 
-- [ ] Normalize `skills` and `causes` as arrays (optional tag vocabulary table)
-- [ ] Event tags/category aligned with cause vocabulary
-- [ ] Endpoint: `GET /api/v1/events/recommended`
+- [x] Normalize `skills` and `causes` as arrays (optional tag vocabulary table)
+- [x] Event tags/category aligned with cause vocabulary
+- [x] Endpoint: `GET /api/v1/events/recommended`
   - Score = skill overlap + cause overlap + simple location match
-- [ ] UI: “Recommended for you” on Events feed and Dashboard
+- [x] UI: “Recommended for you” on Events feed and Dashboard
 
 #### B. Real impact metrics
 
-- [ ] Extend `join_event` with `status`: `registered | attended | no_show`
-- [ ] Organizer endpoint to mark attendance
-- [ ] Compute hours from event `start_time` / `end_time` × attended rows
-- [ ] Dashboard widgets from API: hours, events attended, help contributions, teams
-- [ ] Optional public impact snippet on profile
+- [x] Extend `join_event` with `status`: `registered | attended | no_show`
+- [x] Organizer endpoint to mark attendance
+- [x] Compute hours from event `start_time` / `end_time` × attended rows
+- [x] Dashboard widgets from API: hours, events attended, help contributions, teams
+- [x] Optional public impact snippet on profile
 
 #### C. Help request workflow
 
-- [ ] Status: `open | in_progress | resolved`
-- [ ] Claim / assign helper to self
-- [ ] Urgency filter + sort (extend existing)
+- [x] Status: `open | in_progress | resolved`
+- [x] Claim / assign helper to self
+- [x] Urgency filter + sort (extend existing)
 
 #### D. Team roles (lightweight org story)
 
-- [ ] Roles: `owner | admin | member`
-- [ ] Owner/admin: edit team, remove members, manage attendance on team events
-- [ ] Private teams: invite token or invite code table
+- [x] Roles: `owner | admin | member`
+- [x] Owner/admin: edit team, remove members, manage attendance on team events
+- [x] Private teams: invite token or invite code table
 
 #### E. In-app notifications
 
-- [ ] Table: `notifications (id, user_id, type, payload, read_at, created_at)`
-- [ ] Emit on: join confirmed, help comment, team invite, attendance marked
-- [ ] Bell dropdown in AppShell (poll every N seconds)
+- [x] Table: `notifications (id, user_id, type, payload, read_at, created_at)`
+- [x] Emit on: join confirmed, help comment, team invite, attendance marked
+- [x] Bell dropdown in AppShell (poll every N seconds)
 
 #### Explicitly deferred from v1
 
@@ -407,25 +407,26 @@ After shipping, the project should support this story in interviews:
 
 #### Quality
 
-- [ ] Backend tests (Vitest/Jest + Supertest): auth, IDOR negatives, join capacity, matching score
-- [ ] Frontend tests (Vitest + RTL): AuthProvider, API client, critical forms
+- [x] Backend tests (Vitest/Jest + Supertest): auth, IDOR negatives, join capacity, matching score
+- [x] Frontend tests (Vitest + RTL): AuthProvider, API client, critical forms
 - [ ] Optional Playwright smoke: login → create event → join
 
 #### DevOps
 
-- [ ] Root `docker-compose.yml`: `db`, `api`, `web` (or API+DB + static host for web)
-- [ ] GitHub Actions: lint + test + build on PR
-- [ ] Deploy: Render/Railway (API + Postgres) + Vercel/Netlify (frontend)
-- [ ] Production env vars documented; CORS locked to frontend origin
+- [x] Root `docker-compose.yml`: `db`, `api`, `web` (or API+DB + static host for web)
+- [x] GitHub Actions: lint + test + build on PR
+- [x] Deploy: Render/Railway (API + Postgres) + Vercel/Netlify (frontend) — documented (`docs/DEPLOY.md`); publish with account credentials
+- [x] Production env vars documented; CORS locked to frontend origin
 
 #### Portfolio packaging
 
-- [ ] README rewrite: architecture diagram, setup, env vars, demo credentials, screenshots
-- [ ] Seeded demo accounts documented
-- [ ] Short Loom walkthrough script for recruiters
-- [ ] Architecture / decisions section for interview talking points
+- [x] README rewrite: architecture diagram, setup, env vars, demo credentials, screenshots
+- [x] Seeded demo accounts documented
+- [x] Short Loom walkthrough script for recruiters
+- [x] Architecture / decisions section for interview talking points
 
-**Exit criteria:** public URL; CI green; stranger can clone and run via Compose.
+**Exit criteria:** public URL; CI green; stranger can clone and run via Compose.  
+_(Public URL requires your Render/Vercel deploy; Compose + CI cover the rest.)_
 
 ---
 
@@ -509,14 +510,10 @@ After shipping, the project should support this story in interviews:
 | 5 | Events/help/teams UX parity | Consistent product UX |
 | 6 | Matching + attendance/impact | Differentiator works |
 | 7 | Help status, roles, notifications | Depth / stretch |
-| 8 | Tests, Docker, CI, deploy, README | Live resume link |
+| 8 | Tests, Docker, CI, deploy, README | Live resume link / Compose + CI |
 
 ---
 
 ## 12. Next Step
 
-This document is the source of truth for modernization.
-
-**Do not start coding until you explicitly ask to implement** (e.g. “start Phase 0” or “execute the plan”).
-
-Recommended first execution command: implement **Phase 0** only, then review before Phase 1.
+Phases 0–4 are implemented in-repo (tests, Compose, CI, README/deploy docs). Remaining optional work: Playwright smoke, live Render/Vercel publish for a public URL.
