@@ -1,4 +1,1 @@
-@import "tailwindcss";
-@plugin "daisyui"{
-  themes:  light --default, emerald;
-}
+/* Legacy DaisyUI theme file kept empty — tokens live in index.css */
