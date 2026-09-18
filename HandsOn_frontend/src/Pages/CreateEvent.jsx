@@ -1,13 +1,35 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import SideBar from "./components/SideBar";
-import NavBar from "./components/NavBar";
-import { jwtDecode } from "jwt-decode";
-import axios from "axios";
+import api from "../api/client";
+import AppShell from "../components/AppShell";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Select from "../components/ui/Select";
+import Textarea from "../components/ui/Textarea";
+import Alert from "../components/ui/Alert";
+import { useToast } from "../components/ToastProvider";
 
-const CreateEvent = ({ setAuth }) => {
+const CATEGORIES = [
+  "Education",
+  "Environment",
+  "Social Activity",
+  "Healthcare",
+  "Animal Welfare",
+  "Community Development",
+  "Elderly Care",
+  "Youth Empowerment",
+  "Disaster Relief",
+  "Arts & Culture",
+  "Food Security",
+  "Sports",
+  "Other",
+];
+
+export default function CreateEvent({ setAuth }) {
   const navigate = useNavigate();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const toast = useToast();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [eventData, setEventData] = useState({
     title: "",
     details: "",
@@ -17,253 +39,126 @@ const CreateEvent = ({ setAuth }) => {
     end_time: "",
     category: "",
     member_limit: "",
+    tags: "",
   });
 
-  const categories = [
-    "Education",
-    "Environment",
-    "Social Activity",
-    "Healthcare",
-    "Animal Welfare",
-    "Community Development",
-    "Elderly Care",
-    "Youth Empowerment",
-    "Disaster Relief",
-    "Arts & Culture",
-    "Food Security",
-    "Sports",
-    "Other",
-  ];
-
-  const handleChange = (e) => {
+  const onChange = (e) => {
     const { name, value } = e.target;
-    setEventData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setEventData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("No token found");
-      navigate("/login");
-      return;
-    }
-
-    // Decode the token to get user_id
-    const decoded = jwtDecode(token);
-    const userId = decoded.user;
-
-    console.log("Decoded user ID:", userId);
-    console.log("Sending data to backend:", eventData);
-
+    setLoading(true);
+    setError("");
     try {
-      const response = await axios.post(
-        `http://localhost:5000/api/create-event/${userId}`, 
-        eventData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (response.data.status === "success") {
-        alert("Event created successfully");
+      const payload = {
+        ...eventData,
+        tags: eventData.tags
+          ? eventData.tags.split(",").map((t) => t.trim()).filter(Boolean)
+          : undefined,
+      };
+      const res = await api.post("/events", payload);
+      if (res.data.status === "success") {
+        toast.success("Event created");
         navigate("/events-feed");
       } else {
-        alert(response.data.message || "Event creation failed");
+        setError(res.data.message || "Event creation failed");
       }
     } catch (err) {
-      console.error("Error creating event:", err);
-      if (err.response) {
-        console.error("Response data:", err.response.data);
-        alert(err.response.data.message || "Failed to create event");
-      } else {
-        alert("Network error. Please try again.");
-      }
+      setError(err.response?.data?.message || "Failed to create event");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <SideBar
-        isSidebarCollapsed={isSidebarCollapsed}
-        setIsSidebarCollapsed={setIsSidebarCollapsed}
-        setAuth={setAuth}
-      />
-
-      <div
-        className={`flex-1 transition-all duration-300 ${
-          isSidebarCollapsed ? "ml-20" : "ml-64"
-        }`}
+    <AppShell setAuth={setAuth} title="Create event">
+      <form
+        onSubmit={handleSubmit}
+        className="mx-auto max-w-2xl space-y-4 rounded-3xl bg-white p-6 shadow-sm"
       >
-        <NavBar />
-
-        <div className="max-w-4xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">
-              Create Volunteer Event
-            </h1>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Event Information */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-700">
-                  Basic Information
-                </h2>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Event Title
-                  </label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={eventData.title}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <textarea
-                    name="details"
-                    value={eventData.details}
-                    onChange={handleChange}
-                    required
-                    rows={4}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={eventData.date}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Category
-                    </label>
-                    <select
-                      name="category"
-                      value={eventData.category}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                      <option value="">Select a category</option>
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Start Time
-                    </label>
-                    <input
-                      type="time"
-                      name="start_time"
-                      value={eventData.start_time}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      End Time
-                    </label>
-                    <input
-                      type="time"
-                      name="end_time"
-                      value={eventData.end_time}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Location and Requirements */}
-              <div className="space-y-4 pt-6">
-                <h2 className="text-xl font-semibold text-gray-700">
-                  Location and Requirements
-                </h2>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={eventData.location}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Full address"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Maximum Volunteers
-                  </label>
-                  <input
-                    type="number"
-                    name="member_limit"
-                    value={eventData.member_limit}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="pt-6">
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-300"
-                >
-                  Create Event
-                </button>
-              </div>
-            </form>
-          </div>
+        {error ? <Alert tone="error">{error}</Alert> : null}
+        <Input id="title" name="title" label="Title" required value={eventData.title} onChange={onChange} />
+        <Textarea
+          id="details"
+          name="details"
+          label="Details"
+          required
+          value={eventData.details}
+          onChange={onChange}
+        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input id="date" name="date" type="date" label="Date" required value={eventData.date} onChange={onChange} />
+          <Input
+            id="location"
+            name="location"
+            label="Location"
+            required
+            value={eventData.location}
+            onChange={onChange}
+          />
+          <Input
+            id="start_time"
+            name="start_time"
+            type="time"
+            label="Start time"
+            required
+            value={eventData.start_time}
+            onChange={onChange}
+          />
+          <Input
+            id="end_time"
+            name="end_time"
+            type="time"
+            label="End time"
+            required
+            value={eventData.end_time}
+            onChange={onChange}
+          />
         </div>
-      </div>
-    </div>
+        <Select
+          id="category"
+          name="category"
+          label="Category"
+          required
+          value={eventData.category}
+          onChange={onChange}
+        >
+          <option value="">Select category</option>
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </Select>
+        <Input
+          id="member_limit"
+          name="member_limit"
+          type="number"
+          min="1"
+          label="Member limit"
+          required
+          value={eventData.member_limit}
+          onChange={onChange}
+        />
+        <Input
+          id="tags"
+          name="tags"
+          label="Tags (comma-separated, optional)"
+          placeholder="education, mentoring"
+          value={eventData.tags || ""}
+          onChange={onChange}
+        />
+        <div className="flex gap-2">
+          <Button type="submit" loading={loading}>
+            Create event
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate("/events-feed")}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </AppShell>
   );
-};
-
-export default CreateEvent;
+}

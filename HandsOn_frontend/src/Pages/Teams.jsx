@@ -1,214 +1,160 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import NavBar from "./components/NavBar";
-import SideBar from "./components/SideBar";
-import Footer from "./components/Footer";
-import { FaUsers, FaLock, FaGlobe, FaSearch, FaPlus } from "react-icons/fa";
-import { jwtDecode } from "jwt-decode";
+import { FaGlobe, FaLock } from "react-icons/fa";
+import api from "../api/client";
+import AppShell from "../components/AppShell";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import EmptyState from "../components/ui/EmptyState";
+import Input from "../components/ui/Input";
+import Alert from "../components/ui/Alert";
+import { Spinner } from "../components/ui/Spinner";
+import { useToast } from "../components/ToastProvider";
 
-const Teams = ({ setAuth }) => {
+export default function Teams({ setAuth }) {
   const navigate = useNavigate();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const toast = useToast();
   const [teams, setTeams] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [search, setSearch] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [joiningId, setJoiningId] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.get("/teams");
+      setTeams(res.data?.data || []);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load teams");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchTeams();
+    load();
   }, []);
 
-  const fetchTeams = async () => {
+  const filtered = useMemo(
+    () =>
+      teams.filter((team) =>
+        String(team.name || "")
+          .toLowerCase()
+          .includes(search.toLowerCase())
+      ),
+    [teams, search]
+  );
+
+  const join = async (teamId) => {
+    setJoiningId(teamId);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      const response = await axios.get("http://localhost:5000/api/get-teams", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      console.log("Teams response:", response.data);
-      const teamsData = response.data.data || [];
-      console.log("Processed teams data:", teamsData);
-      setTeams(teamsData);
+      await api.post(`/teams/${teamId}/join`);
+      toast.success("Joined team");
+      await load();
     } catch (err) {
-      console.error("Error fetching teams:", err);
+      toast.error(err.response?.data?.message || "Failed to join team");
+    } finally {
+      setJoiningId(null);
     }
   };
-
-  const handleJoinTeam = async (teamId) => {
-    console.log("Team ID:", teamId);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      const decoded = jwtDecode(token);
-      const userId = decoded.user;
-
-      await axios.post(
-        `http://localhost:5000/api/join-team/${teamId}`,
-        { teamId, userId },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      alert("Team joined successfully");
-      // Refresh teams list
-      fetchTeams();
-    } catch (err) {
-      console.error("Error joining team:", err);
-    }
-  };
-
-  const filteredTeams = teams.filter((team) => {
-    const matchesSearch = team.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="flex">
-        <SideBar
-          isSidebarCollapsed={isSidebarCollapsed}
-          setIsSidebarCollapsed={setIsSidebarCollapsed}
-          setAuth={setAuth}
+    <AppShell
+      setAuth={setAuth}
+      title="Teams"
+      actions={
+        <Button size="sm" onClick={() => navigate("/create-team")}>
+          Create team
+        </Button>
+      }
+    >
+      <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <Input
+          id="team-search"
+          label="Search teams"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
-        <div
-          className={`flex-1 transition-all duration-300 flex flex-col ${
-            isSidebarCollapsed ? "ml-20" : "ml-64"
-          }`}
-        >
-          <NavBar />
-          <div className="container mx-auto px-4 py-8 flex-grow">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">
-                Volunteer Teams
-              </h1>
-              <button
-                onClick={() => navigate("/create-team")}
-                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <FaPlus className="mr-2" />
-                Create Team
-              </button>
-            </div>
-
-            {/* Search and Filter Section */}
-            <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-              <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
-                {/* Search Input */}
-                <div className="flex-1 relative">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search teams..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Teams Grid */}
-            {teams.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredTeams.map((team) => (
-                  <div
-                    key={team.id}
-                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-                  >
-                    {/* Team Header */}
-                    <div className="p-6 border-b">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-xl font-semibold text-gray-900">
-                          {team.name}
-                        </h3>
-                        {team.is_private ? (
-                          <FaLock className="text-gray-500" />
-                        ) : (
-                          <FaGlobe className="text-gray-500" />
-                        )}
-                      </div>
-                      <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                        {team.category}
-                      </span>
-                    </div>
-
-                    {/* Team Description */}
-                    <div className="p-6">
-                      <p className="text-gray-600 mb-4 line-clamp-3">
-                        {team.description}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <FaUsers className="mr-2" />
-                          {team.member_count || 0} members
-                        </div>
-                        {team.is_member ? (
-                          <button
-                            onClick={() => navigate(`/team/${team.id}`)}
-                            className="px-4 py-2 rounded-lg transition-colors flex items-center bg-purple-600 text-white hover:bg-purple-700"
-                          >
-                            Team Details
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => !team.is_private && handleJoinTeam(team.id)}
-                            disabled={team.is_private}
-                            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
-                              team.is_private
-                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                : 'bg-purple-600 text-white hover:bg-purple-700'
-                            }`}
-                          >
-                            {team.is_private ? (
-                              <>
-                                <FaLock className="mr-2" />
-                                Private
-                              </>
-                            ) : (
-                              'Join Team'
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* No Results Message */}
-            {filteredTeams.length === 0 && (
-              <div className="text-center py-12">
-                <FaUsers className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No teams found
-                </h3>
-                <p className="text-gray-500">
-                  Try adjusting your search or filter criteria
-                </p>
-              </div>
-            )}
-          </div>
-          <Footer />
+        <div className="flex items-end gap-2">
+          <Input
+            id="team-invite-code"
+            label="Join with invite code"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+          />
+          <Button
+            onClick={async () => {
+              try {
+                const res = await api.post("/teams/join-by-code", {
+                  code: inviteCode.trim(),
+                });
+                toast.success("Joined team");
+                navigate(`/teams/${res.data?.data?.teamId}`);
+              } catch (err) {
+                toast.error(err.response?.data?.message || "Invalid code");
+              }
+            }}
+          >
+            Join
+          </Button>
         </div>
       </div>
-    </div>
-  );
-};
 
-export default Teams;
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Spinner />
+        </div>
+      ) : error ? (
+        <Alert tone="error">{error}</Alert>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          title="No teams found"
+          description="Create a team or try a different search."
+          actionLabel="Create team"
+          onAction={() => navigate("/create-team")}
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((team) => (
+            <article key={team.id} className="rounded-2xl bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="font-display text-xl">{team.name}</h3>
+                {team.is_private ? (
+                  <FaLock className="text-[var(--color-soil)]/50" aria-label="Private team" />
+                ) : (
+                  <FaGlobe className="text-[var(--color-teal)]" aria-label="Public team" />
+                )}
+              </div>
+              <Badge className="mt-3">{team.category || "General"}</Badge>
+              <p className="mt-3 line-clamp-3 text-sm text-[var(--color-soil)]/80">
+                {team.description || "No description provided."}
+              </p>
+              <p className="mt-3 text-sm text-[var(--color-soil)]/70">
+                {team.member_count || 0} members
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button size="sm" variant="secondary" onClick={() => navigate(`/teams/${team.id}`)}>
+                  View
+                </Button>
+                {!team.is_member && !team.is_private ? (
+                  <Button
+                    size="sm"
+                    loading={joiningId === team.id}
+                    onClick={() => join(team.id)}
+                  >
+                    Join
+                  </Button>
+                ) : team.is_member ? (
+                  <Badge tone="leaf">Member</Badge>
+                ) : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </AppShell>
+  );
+}

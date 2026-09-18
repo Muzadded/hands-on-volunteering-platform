@@ -1,326 +1,261 @@
-import React, { useState, useEffect } from "react";
-import NavBar from "./components/NavBar";
-import SideBar from "./components/SideBar";
-import axios from "axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FaMapMarkerAlt,
-  FaPlus,
-  FaComment,
-  FaExclamationTriangle,
-  FaExclamationCircle,
-  FaInfoCircle,
-} from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
+import api from "../api/client";
+import AppShell from "../components/AppShell";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import EmptyState from "../components/ui/EmptyState";
+import Textarea from "../components/ui/Textarea";
+import Select from "../components/ui/Select";
+import Alert from "../components/ui/Alert";
+import { Spinner } from "../components/ui/Spinner";
+import { useToast } from "../components/ToastProvider";
 
-const HelpReq = ({ setAuth }) => {
+export default function HelpReq({ setAuth }) {
   const navigate = useNavigate();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [helpPosts, setHelpPosts] = useState([]);
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [postDetails, setPostDetails] = useState(null);
+  const toast = useToast();
+  const [posts, setPosts] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [details, setDetails] = useState(null);
   const [comment, setComment] = useState("");
-  const [refreshData, setRefreshData] = useState(false);
-
-  // Fetch all help posts
-  useEffect(() => {
-    const fetchHelpPosts = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          navigate("/login");
-          return;
-        }
-
-        const response = await axios.get(
-          "http://localhost:5000/api/get-help-posts",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.data && response.data.data) {
-          setHelpPosts(response.data.data);
-        }
-      } catch (err) {
-        console.error("Error fetching help posts:", err);
-
-        if (err.response && err.response.status === 401) {
-          localStorage.removeItem("token");
-          setAuth(false);
-          navigate("/login");
-        }
-      }
-    };
-
-    fetchHelpPosts();
-  }, [navigate, setAuth, refreshData]);
-
-  // Fetch post details when a post is selected
-  useEffect(() => {
-    const fetchPostDetails = async () => {
-      if (!selectedPost) return;
-
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          navigate("/login");
-          return;
-        }
-
-        const response = await axios.get(
-          `http://localhost:5000/api/help-post/${selectedPost}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.data && response.data.data) {
-          setPostDetails(response.data.data);
-        }
-      } catch (err) {
-        console.error("Error fetching post details:", err);
-      }
-    };
-
-    fetchPostDetails();
-  }, [selectedPost, navigate, refreshData]);
-
-  const handlePostSelect = (postId) => {
-    console.log("handlePostSelect Selected post ID:", postId);
-    setSelectedPost(postId);
-    setComment("");
-  };
-
-  const handleAddComment = async () => {
-    const token = localStorage.getItem("token");
-    const decoded = jwtDecode(token);
-    const userId = decoded.user;
-    console.log("handleAddComment Selected post ID:", selectedPost);
-    console.log("handleAddComment User ID:", userId);
-    console.log("handleAddComment Comment:", comment);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [urgencyFilter, setUrgencyFilter] = useState("");
+  const currentUserId = (() => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
+      return jwtDecode(localStorage.getItem("token") || "").user;
+    } catch {
+      return null;
+    }
+  })();
 
-      await axios.post(
-        "http://localhost:5000/api/help-post/comment",
-        {
-          postId: selectedPost,
-          userId: userId,
-          comment: comment,
+  const loadPosts = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.get("/help-posts", {
+        params: {
+          ...(statusFilter ? { status: statusFilter } : {}),
+          ...(urgencyFilter ? { urgency: urgencyFilter } : {}),
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setComment("");
-      setRefreshData(!refreshData); // Trigger a refresh
+      });
+      setPosts(res.data?.data || []);
     } catch (err) {
-      console.error("Error adding comment:", err);
+      setError(err.response?.data?.message || "Failed to load help posts");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "Unknown date";
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + " at " + date.toLocaleTimeString();
+  useEffect(() => {
+    loadPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, urgencyFilter]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const loadDetails = async () => {
+      try {
+        const res = await api.get(`/help-posts/${selectedId}`);
+        setDetails(res.data?.data || null);
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Failed to load post");
+      }
+    };
+    loadDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
+  const addComment = async () => {
+    if (!comment.trim()) return;
+    setPosting(true);
+    try {
+      await api.post(`/help-posts/${selectedId}/comments`, { comment });
+      setComment("");
+      toast.success("Comment added");
+      const res = await api.get(`/help-posts/${selectedId}`);
+      setDetails(res.data?.data || null);
+      await loadPosts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to comment");
+    } finally {
+      setPosting(false);
+    }
   };
 
-  const getUrgencyBadge = (urgencyLevel) => {
-    switch (urgencyLevel) {
-      case "urgent":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <FaExclamationCircle className="mr-1" /> Urgent
-          </span>
-        );
-      case "medium":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            <FaExclamationTriangle className="mr-1" /> Medium
-          </span>
-        );
-      case "low":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <FaInfoCircle className="mr-1" /> Low
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            <FaInfoCircle className="mr-1" /> Not specified
-          </span>
-        );
+  const claim = async () => {
+    try {
+      await api.post(`/help-posts/${selectedId}/claim`);
+      toast.success("Claimed help request");
+      const res = await api.get(`/help-posts/${selectedId}`);
+      setDetails(res.data?.data || null);
+      await loadPosts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to claim");
     }
+  };
+
+  const setStatus = async (status) => {
+    try {
+      await api.patch(`/help-posts/${selectedId}`, { status });
+      toast.success(`Marked ${status}`);
+      const res = await api.get(`/help-posts/${selectedId}`);
+      setDetails(res.data?.data || null);
+      await loadPosts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  const urgencyTone = (level) => {
+    if (level === "urgent") return "danger";
+    if (level === "medium") return "warn";
+    return "teal";
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        <SideBar
-          isSidebarCollapsed={isSidebarCollapsed}
-          setIsSidebarCollapsed={setIsSidebarCollapsed}
-          setAuth={setAuth}
-        />
-        <div
-          className={`flex-1 transition-all duration-300 ${
-            isSidebarCollapsed ? "ml-20" : "ml-64"
-          }`}
+    <AppShell
+      setAuth={setAuth}
+      title="Help requests"
+      actions={
+        <Button size="sm" onClick={() => navigate("/create-help-post")}>
+          New request
+        </Button>
+      }
+    >
+      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+        <Select
+          id="help-status-filter"
+          label="Status"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <NavBar />
-          <div className="container mx-auto px-4 py-6 max-w-3xl">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">
-                  Help Requests
-                </h1>
-                <p className="mt-1 text-sm text-gray-600">
-                  Support your community by helping others
-                </p>
-              </div>
+          <option value="">All statuses</option>
+          <option value="open">Open</option>
+          <option value="in_progress">In progress</option>
+          <option value="resolved">Resolved</option>
+        </Select>
+        <Select
+          id="help-urgency-filter"
+          label="Urgency"
+          value={urgencyFilter}
+          onChange={(e) => setUrgencyFilter(e.target.value)}
+        >
+          <option value="">All urgency</option>
+          <option value="urgent">Urgent</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </Select>
+      </div>
 
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Spinner />
+        </div>
+      ) : error ? (
+        <Alert tone="error">{error}</Alert>
+      ) : posts.length === 0 ? (
+        <EmptyState
+          title="No help posts yet"
+          description="Be the first to ask your community for support."
+          actionLabel="Create help post"
+          onAction={() => navigate("/create-help-post")}
+        />
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-3">
+            {posts.map((post) => (
               <button
-                onClick={() => navigate("/create-help-post")}
-                className="mt-4 md:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors duration-200 ease-in-out"
+                key={post.help_post_id}
+                type="button"
+                onClick={() => setSelectedId(post.help_post_id)}
+                className={`w-full rounded-2xl bg-white p-4 text-left shadow-sm transition ${
+                  selectedId === post.help_post_id ? "ring-2 ring-[var(--color-teal)]" : ""
+                }`}
               >
-                <FaPlus className="mr-2 h-4 w-4" />
-                New Request
-              </button>
-            </div>
-
-            {/* Help Posts Feed */}
-            <div className="space-y-6">
-              {helpPosts.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-100">
-                  <p className="text-gray-500">No help requests available</p>
-                </div>
-              ) : (
-                helpPosts.map((post) => (
-                  <div
-                    key={post.help_post_id}
-                    className="bg-white rounded-lg shadow-sm border border-gray-100"
-                  >
-                    {/* Post Header */}
-                    <div className="p-4">
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0">
-                          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-medium text-purple-700">
-                              {post.requester_name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900">
-                            {post.requester_name}
-                          </p>
-                          <div className="flex items-center text-xs text-gray-500 mt-1">
-                            <FaMapMarkerAlt className="mr-1" />
-                            <span>{post.location}</span>
-                            <span className="mx-2">•</span>
-                            <span>{formatDate(post.created_at)}</span>
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {getUrgencyBadge(post.urgency_level)}
-                        </div>
-                      </div>
-                      {/* Post Content */}
-                      <p className="mt-3 text-sm text-gray-600">
-                        {post.details}
-                      </p>
-
-                      {/* Comment Count */}
-                      <div className="mt-4 flex items-center text-xs text-gray-500 space-x-4">
-                        <span className="flex items-center">
-                          <FaComment className="mr-1 text-blue-500" />
-                          {post.comment_count || 0} comments
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Comment Buttons */}
-                    <div className="border-t border-gray-100 px-4 py-3 flex space-x-3">
-                      <button
-                        onClick={() => handlePostSelect(post.help_post_id)}
-                        className="flex items-center justify-center px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 rounded-md border border-gray-200"
-                      >
-                        <FaComment className="mr-1.5 h-3 w-3" /> Comment
-                      </button>
-                    </div>
-
-                    {/*  Comment details */}
-                    {selectedPost === post.help_post_id && postDetails && (
-                      <div className="border-t border-gray-100 bg-gray-50 p-4">
-                        {/* Comments Section */}
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 mb-3">
-                            Comments
-                          </h4>
-                          <div className="space-y-2">
-                            {postDetails.comments.map((comment) => (
-                              <div
-                                key={comment.id}
-                                className="bg-white p-3 rounded-md shadow-sm border border-gray-100"
-                              >
-                                <div className="flex justify-between items-start">
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {comment.commenter_name}
-                                  </span>
-                                </div>
-                                <p className="mt-1 text-sm text-gray-600">
-                                  {comment.comment}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Add Comment Form */}
-                          <div className="mt-3">
-                            <textarea
-                              value={comment}
-                              onChange={(e) => setComment(e.target.value)}
-                              placeholder="Write a comment..."
-                              className="w-full px-3 py-2 text-sm border rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                              rows="2"
-                            ></textarea>
-                            <button
-                              onClick={handleAddComment}
-                              disabled={!comment.trim()}
-                              className={`mt-2 px-4 py-2 text-sm font-medium rounded-md ${
-                                comment.trim()
-                                  ? "bg-purple-600 text-white hover:bg-purple-700"
-                                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              }`}
-                            >
-                              Post Comment
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold">{post.requester_name}</p>
+                  <div className="flex gap-1">
+                    <Badge tone={urgencyTone(post.urgency_level)}>{post.urgency_level}</Badge>
+                    <Badge tone="muted">{post.status}</Badge>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+                <p className="mt-2 line-clamp-2 text-sm text-[var(--color-soil)]/80">
+                  {post.details}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-2xl bg-white p-5 shadow-sm">
+            {!selectedId ? (
+              <p className="text-[var(--color-soil)]/70">Select a help request to view details.</p>
+            ) : !details ? (
+              <Spinner />
+            ) : (
+              <>
+                <h3 className="font-display text-2xl">{details.post.requester_name}</h3>
+                <p className="mt-2 text-[var(--color-soil)]">{details.post.details}</p>
+                <p className="mt-3 text-sm text-[var(--color-soil)]/70">
+                  {details.post.location}
+                  {details.post.helper_name ? ` · Helper: ${details.post.helper_name}` : ""}
+                </p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {details.post.status === "open" &&
+                  String(details.post.created_by) !== String(currentUserId) ? (
+                    <Button size="sm" onClick={claim}>
+                      Claim this request
+                    </Button>
+                  ) : null}
+                  {(String(details.post.created_by) === String(currentUserId) ||
+                    String(details.post.claimed_by) === String(currentUserId)) &&
+                  details.post.status !== "resolved" ? (
+                    <Button size="sm" variant="secondary" onClick={() => setStatus("resolved")}>
+                      Mark resolved
+                    </Button>
+                  ) : null}
+                  {String(details.post.created_by) === String(currentUserId) &&
+                  details.post.status !== "open" ? (
+                    <Button size="sm" variant="ghost" onClick={() => setStatus("open")}>
+                      Reopen
+                    </Button>
+                  ) : null}
+                </div>
+
+                <div className="mt-6 space-y-3">
+                  <h4 className="font-semibold">Comments</h4>
+                  {(details.comments || []).length === 0 ? (
+                    <p className="text-sm text-[var(--color-soil)]/60">No comments yet.</p>
+                  ) : (
+                    details.comments.map((c) => (
+                      <div key={c.comment_id} className="rounded-xl bg-[var(--color-mist)] p-3">
+                        <p className="text-sm font-semibold">{c.commenter_name}</p>
+                        <p className="text-sm text-[var(--color-soil)]">{c.comment}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <Textarea
+                    id="help-comment"
+                    label="Add a comment"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                  />
+                  <Button onClick={addComment} loading={posting}>
+                    Post comment
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </AppShell>
   );
-};
-
-export default HelpReq;
+}

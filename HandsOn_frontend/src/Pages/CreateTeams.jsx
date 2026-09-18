@@ -1,237 +1,103 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import NavBar from "./components/NavBar";
-import SideBar from "./components/SideBar";
-import { FaArrowLeft, FaUsers, FaLock, FaGlobe } from "react-icons/fa";
-import { jwtDecode } from "jwt-decode";
+import api from "../api/client";
+import AppShell from "../components/AppShell";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Select from "../components/ui/Select";
+import Textarea from "../components/ui/Textarea";
+import Alert from "../components/ui/Alert";
+import { useToast } from "../components/ToastProvider";
 
-const CreateTeams = ({ setAuth }) => {
+const CATEGORIES = [
+  "Education",
+  "Environment",
+  "Social Activity",
+  "Healthcare",
+  "Animal Welfare",
+  "Community Development",
+  "Other",
+];
+
+export default function CreateTeams({ setAuth }) {
   const navigate = useNavigate();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const toast = useToast();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     category: "",
     isPrivate: false,
-    created_by: "",
   });
-
-  const categories = [
-    "Education",
-    "Environment",
-    "Social Activity",
-    "Healthcare",
-    "Animal Welfare",
-    "Community Development",
-    "Elderly Care",
-    "Youth Empowerment",
-    "Disaster Relief",
-    "Arts & Culture",
-    "Food Security",
-    "Sports",
-    "Other",
-  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    const decoded = jwtDecode(token);
-    const userId = decoded.user;
-    formData.created_by = userId;
-
+    setLoading(true);
+    setError("");
     try {
-      await axios.post(
-        `http://localhost:5000/api/create-team/${userId}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      alert("Team created successfully");
+      await api.post("/teams", formData);
+      toast.success("Team created");
       navigate("/teams");
     } catch (err) {
-      console.error("Error creating team:", err);
+      setError(err.response?.data?.message || "Failed to create team");
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="flex">
-        <SideBar
-          isSidebarCollapsed={isSidebarCollapsed}
-          setIsSidebarCollapsed={setIsSidebarCollapsed}
-          setAuth={setAuth}
+    <AppShell setAuth={setAuth} title="Create team">
+      <form
+        onSubmit={handleSubmit}
+        className="mx-auto max-w-xl space-y-4 rounded-3xl bg-white p-6 shadow-sm"
+      >
+        {error ? <Alert tone="error">{error}</Alert> : null}
+        <Input
+          id="team-name"
+          label="Team name"
+          required
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
-        <div
-          className={`flex-1 transition-all duration-300 ${
-            isSidebarCollapsed ? "ml-20" : "ml-64"
-          }`}
+        <Textarea
+          id="team-description"
+          label="Description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        />
+        <Select
+          id="team-category"
+          label="Category"
+          required
+          value={formData.category}
+          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
         >
-          <NavBar />
-          <div className="container mx-auto px-4 py-8 max-w-2xl">
-            <div className="mb-6 flex items-center">
-              <button
-                onClick={() => navigate("/teams")}
-                className="mr-4 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <FaArrowLeft size={20} />
-              </button>
-              <h1 className="text-3xl font-bold text-gray-900">Create Team</h1>
-            </div>
-
-            <form
-              onSubmit={handleSubmit}
-              className="bg-white rounded-lg shadow-md p-6 space-y-6"
-            >
-              {/* Team Name */}
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-gray-700 font-medium mb-2"
-                >
-                  Team Name*
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Enter team name"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-gray-700 font-medium mb-2"
-                >
-                  Description*
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  required
-                  placeholder="Describe your team's mission and goals..."
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                  rows="4"
-                ></textarea>
-              </div>
-
-              {/* Category */}
-              <div>
-                <label
-                  htmlFor="category"
-                  className="block text-gray-700 font-medium mb-2"
-                >
-                  Category*
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
-                >
-                  <option value="">Select a category</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Privacy Setting */}
-              <div className="space-y-4">
-                <label className="block text-gray-700 font-medium mb-2">
-                  Privacy Setting
-                </label>
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="isPrivate"
-                      name="isPrivate"
-                      checked={formData.isPrivate}
-                      onChange={handleChange}
-                      className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                    />
-                    <label
-                      htmlFor="isPrivate"
-                      className="ml-2 block text-sm text-gray-700"
-                    >
-                      Make this team private
-                    </label>
-                  </div>
-                  {formData.isPrivate ? (
-                    <FaLock className="text-gray-500" />
-                  ) : (
-                    <FaGlobe className="text-gray-500" />
-                  )}
-                </div>
-
-                <div className="bg-gray-50 rounded-md p-4 text-sm text-gray-600">
-                  <div className="flex items-center mb-2">
-                    {formData.isPrivate ? (
-                      <FaLock className="mr-2" />
-                    ) : (
-                      <FaGlobe className="mr-2" />
-                    )}
-                    <span className="font-medium">
-                      {formData.isPrivate ? "Private Team" : "Public Team"}
-                    </span>
-                  </div>
-                  <p>
-                    {formData.isPrivate
-                      ? "Only invited members can join and see team activities."
-                      : "Anyone can find and join this team."}
-                  </p>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className={`flex items-center px-6 py-3 rounded-lg text-white font-medium bg-purple-600 hover:bg-purple-700 transform hover:-translate-y-0.5 transition-all duration-150 `}
-                >
-                  { (
-                    <>
-                      <FaUsers className="mr-2" />
-                      Create Team
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+          <option value="">Select category</option>
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </Select>
+        <label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-soil)]">
+          <input
+            id="team-private"
+            type="checkbox"
+            checked={formData.isPrivate}
+            onChange={(e) => setFormData({ ...formData, isPrivate: e.target.checked })}
+          />
+          Private team
+        </label>
+        <div className="flex gap-2">
+          <Button type="submit" loading={loading}>
+            Create team
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate("/teams")}>
+            Cancel
+          </Button>
         </div>
-      </div>
-    </div>
+      </form>
+    </AppShell>
   );
-};
-
-export default CreateTeams;
+}
