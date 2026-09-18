@@ -1,21 +1,17 @@
-import { Router } from 'express';
-import client from '../db.js';
-import authorization from '../middleware/authorization.js';
+import { Router } from "express";
+import authorization from "../src/middleware/auth.js";
+import * as usersService from "../src/services/usersService.js";
 
 const router = Router();
 
-router.get("/", authorization, async (req, res) => {
-    try {
-
-        // res.json(req.user);
-
-        const user = await client.query("SELECT * FROM users WHERE user_id = $1", [req.user]);
-        res.json(user.rows[0]);
-
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).send("Server Error");
-    }
-})
+// Legacy shape: bare user object (no envelope) for older clients
+router.get("/", authorization, async (req, res, next) => {
+  try {
+    const user = await usersService.getMe(req.user);
+    res.json(user);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;
