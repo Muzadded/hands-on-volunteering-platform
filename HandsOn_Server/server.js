@@ -1,27 +1,13 @@
-import express from "express";
-import cors from "cors";
-import userRoutes from "./routes/userRoutes.js";
-import jwtAuth from "./routes/jwtAuth.js";
-import dashboard from "./routes/dashboard.js";
+import { env } from "./src/config/env.ts";
+import logger from "./src/utils/logger.js";
+import { createApp } from "./src/app.js";
 
-const app = express();
+const app = createApp();
 
-//Middleware
-app.use(express.json());
-app.use(cors());
+if (env.NODE_ENV !== "test") {
+  app.listen(env.PORT, () => {
+    logger.info({ port: env.PORT }, "Server is running");
+  });
+}
 
-//Routes//
-
-//Register and Login
-app.use("/auth", jwtAuth);
-
-//API
-app.use("/api", userRoutes);
-
-//Dashboard
-app.use("/dashboard", dashboard);
-
-app.listen(5000, () => {
-  console.log("Server is running on port 5000");
-});
-
+export default app;

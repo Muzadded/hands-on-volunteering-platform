@@ -1,20 +1,25 @@
-import pkg from 'pg';
-const { Client } = pkg;
+import pkg from "pg";
+import dotenv from "dotenv";
 
-const client = new Client({
-    host: 'localhost',
-    port: 5432,
-    user: 'postgres',
-    password: '12345',
-    database: 'HandsOn',
+dotenv.config();
+
+const { Pool } = pkg;
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is required. Copy .env.example to .env and configure it.");
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
 });
 
-client.connect((err) => {
-    if(err){
-        console.error('connection error', err.stack);
-    }else{
-        console.log('connected to handson_db');
-    }
+pool.on("error", (err) => {
+  console.error("Unexpected idle client error", err);
 });
 
-export default client;
+pool
+  .query("SELECT 1")
+  .then(() => console.log("connected to database via pool"))
+  .catch((err) => console.error("database connection error", err.stack));
+
+export default pool;
