@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: HandsOn
+    ports:
+      - "5432:5432"
+    volumes:
+      - handson_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d HandsOn"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./HandsOn_Server
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/HandsOn
+      JWT_SECRET: compose-dev-change-me-in-production
+      CLIENT_ORIGIN: http://localhost:8080
+      SEED_ON_START: "true"
+    ports:
+      - "5000:5000"
+
+  web:
+    build:
+      context: ./HandsOn_frontend
+      args:
+        VITE_API_URL: http://localhost:5000/api/v1
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  handson_pgdata:
