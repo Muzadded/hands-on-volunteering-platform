@@ -116,15 +116,20 @@ Example: *Food drive — 3 drivers 9:00–12:00, 10 sorters 12:00–16:00.*
 
 Modelled on Nextdoor Help Map and Donoro.
 
-- [ ] **Two-way posts:** "Ask for help" *and* "Offer help" (e.g. "I'm going to the bazar — anyone need anything?")
-- [ ] **Categories:** groceries, medicine, elderly check-in, ride, tutoring, evacuation, other
-- [ ] Title, edit, delete for posts
-- [ ] **Map view** of nearby requests
-- [ ] **One-tap invite** of nearby matching volunteers; they confirm, then contact info and time are shared
-- [ ] Hide exact address until a request is claimed
-- [ ] **Ratings and reviews** after completion
-- [ ] **Report user / report post** with an admin moderation queue
-- [ ] Crisis content guidance (direct users to emergency services / hotlines)
+- [x] **Two-way posts:** "Ask for help" *and* "Offer help" (e.g. "I'm going to the bazar — anyone need anything?")
+- [x] **Categories:** groceries, medicine, elderly check-in, ride, tutoring, evacuation, other
+- [x] Title, edit, delete for posts
+- [x] **Map view** of nearby requests
+- [x] **One-tap invite** of nearby matching volunteers; they confirm, then contact info and time are shared
+- [x] Hide exact address until a request is claimed
+- [x] **Ratings and reviews** after completion
+- [x] **Report user / report post** with an admin moderation queue
+- [x] Crisis content guidance (direct users to emergency services / hotlines)
+
+> Implemented 2026-09-25. Migrations: `1730000000008`–`1730000000011`.
+> Coords use Haversine (no PostGIS). Exact address is revealed only to author + claimer.
+> Invites: `POST /help-posts/:id/invites`, accept shares phone + meeting time.
+> Moderation: `GET /help-posts/moderation/reports` (platform admin).
 
 ---
 
