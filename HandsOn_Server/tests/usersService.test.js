@@ -15,6 +15,13 @@ vi.mock("../src/repositories/helpPostsRepository.js", () => ({
   countContributions: vi.fn(),
 }));
 
+vi.mock("../src/repositories/credentialsRepository.js", () => ({
+  listForUser: vi.fn(),
+  create: vi.fn(),
+  remove: vi.fn(),
+  hasTypes: vi.fn(),
+}));
+
 import * as usersRepo from "../src/repositories/usersRepository.js";
 import * as eventsRepo from "../src/repositories/eventsRepository.js";
 import * as helpRepo from "../src/repositories/helpPostsRepository.js";
