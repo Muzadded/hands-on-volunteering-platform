@@ -1,7 +1,7 @@
 import pool from "../../db.js";
 
 const SAFE_USER_COLUMNS =
-  "user_id, name, gender, dob, email, about, skills, causes, email_verified_at";
+  "user_id, name, gender, dob, email, about, skills, causes, email_verified_at, platform_role, phone, notify_in_app, notify_email, notify_sms";
 
 export async function findById(id) {
   const result = await pool.query(
@@ -71,6 +71,29 @@ export async function markEmailVerified(userId) {
      WHERE user_id = $1
      RETURNING ${SAFE_USER_COLUMNS}`,
     [userId]
+  );
+  return result.rows[0] || null;
+}
+
+export async function updateNotificationPrefs(
+  userId,
+  { phone, notify_in_app, notify_email, notify_sms }
+) {
+  const result = await pool.query(
+    `UPDATE users
+     SET phone = COALESCE($2, phone),
+         notify_in_app = COALESCE($3, notify_in_app),
+         notify_email = COALESCE($4, notify_email),
+         notify_sms = COALESCE($5, notify_sms)
+     WHERE user_id = $1
+     RETURNING ${SAFE_USER_COLUMNS}`,
+    [
+      userId,
+      phone ?? null,
+      notify_in_app ?? null,
+      notify_email ?? null,
+      notify_sms ?? null,
+    ]
   );
   return result.rows[0] || null;
 }
