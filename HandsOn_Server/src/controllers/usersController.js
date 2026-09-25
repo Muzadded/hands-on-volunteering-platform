@@ -21,7 +21,7 @@ export async function getImpact(req, res, next) {
 
 export async function getUserById(req, res, next) {
   try {
-    const userData = await usersService.getUserProfile(req.params.id);
+    const userData = await usersService.getUserProfile(req.user, req.params.id);
     return sendSuccess(res, 200, "User fetched successfully", userData);
   } catch (error) {
     next(error);

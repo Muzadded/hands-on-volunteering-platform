@@ -12,7 +12,7 @@ export async function createEvent(req, res, next) {
 
 export async function listEvents(req, res, next) {
   try {
-    const events = await eventsService.listEvents(req.user);
+    const events = await eventsService.listEvents(req.user, req.query);
     return sendSuccess(res, 200, "Events fetched successfully", events);
   } catch (error) {
     next(error);

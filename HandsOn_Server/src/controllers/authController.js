@@ -34,3 +34,42 @@ export async function login(req, res, next) {
 export async function isVerify(req, res) {
   return sendSuccess(res, 200, "Token valid", true);
 }
+
+export async function forgotPassword(req, res, next) {
+  try {
+    const result = await authService.requestPasswordReset(req.body.email);
+    return sendSuccess(res, 200, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resetPassword(req, res, next) {
+  try {
+    const result = await authService.resetPassword(
+      req.body.token,
+      req.body.password
+    );
+    return sendSuccess(res, 200, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function requestVerification(req, res, next) {
+  try {
+    const result = await authService.requestEmailVerification(req.user);
+    return sendSuccess(res, 200, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verifyEmail(req, res, next) {
+  try {
+    const result = await authService.verifyEmail(req.body.token);
+    return sendSuccess(res, 200, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+}
