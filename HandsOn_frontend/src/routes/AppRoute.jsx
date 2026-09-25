@@ -11,6 +11,7 @@ import CreateEvent from "../Pages/CreateEvent";
 import Events from "../Pages/Events";
 import HelpReq from "../Pages/HelpReq";
 import CreateHelpPost from "../Pages/CreateHelpPost";
+import ModerationQueue from "../Pages/ModerationQueue";
 import Teams from "../Pages/Teams";
 import CreateTeams from "../Pages/CreateTeams";
 import TeamDash from "../Pages/TeamDash";
@@ -185,6 +186,17 @@ const AppRoute = () => {
         element={
           isAuthenticated ? (
             <CreateHelpPost setAuth={setAuth} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+
+      <Route
+        path="/moderation"
+        element={
+          isAuthenticated ? (
+            <ModerationQueue setAuth={setAuth} />
           ) : (
             <Navigate to="/login" replace />
           )
