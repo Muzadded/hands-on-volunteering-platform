@@ -1,6 +1,6 @@
 # HandsOn — Future Updates Roadmap
 
-**Status:** Priority 0 complete — ready for Priority 1  
+**Status:** Priority 0–1 complete — ready for Priority 1 communication / Priority 2  
 **Builds on:** [`PRODUCTION_MODERNIZATION_PLAN.md`](../PRODUCTION_MODERNIZATION_PLAN.md) (Phases 0–4 complete)  
 **Goal:** Move HandsOn from a portfolio demo to a platform real NGOs, volunteers, and communities can run day-to-day.
 
@@ -46,64 +46,69 @@ These gaps undermine the core "verified impact hours" promise.
 
 ### 3.1 Organizations and platform roles (M)
 
-- [ ] `organizations` table: name, logo, description, contact, `verified_at`, `verified_by`
-- [ ] Organization staff roles (`owner | coordinator`)
-- [ ] Global `admin` role for moderation and org verification
-- [ ] **Verified NGO badge**; only hours certified by a verified organization count as "verified"
+- [x] `organizations` table: name, logo, description, contact, `verified_at`, `verified_by`
+- [x] Organization staff roles (`owner | coordinator`)
+- [x] Global `admin` role for moderation and org verification
+- [x] **Verified NGO badge**; only hours certified by a verified organization count as "verified"
 
 **Why:** Real events are run by NGOs, schools, and clubs — not anonymous accounts. This also fixes hours fraud at the source.
 
 ### 3.2 Full event lifecycle (M)
 
-- [ ] Organizer can edit and cancel events (registrants notified automatically)
-- [ ] Volunteer can withdraw
-- [ ] **Waitlist** with automatic promotion when a spot opens
-- [ ] **Recurring events** (weekly shifts, e.g. "every Saturday food drive")
+- [x] Organizer can edit and cancel events (registrants notified automatically)
+- [x] Volunteer can withdraw
+- [x] **Waitlist** with automatic promotion when a spot opens
+- [x] **Recurring events** (weekly shifts, e.g. "every Saturday food drive")
 
 ### 3.3 Shifts and roles within an event (M)
 
-- [ ] `event_shifts (event_id, role_name, starts_at, ends_at, capacity)`
-- [ ] Signup per shift; capacity and hours tracked per shift
-- [ ] Live seat count ("2 of 3 driver spots left")
+- [x] `event_shifts (event_id, role_name, starts_at, ends_at, capacity)`
+- [x] Signup per shift; capacity and hours tracked per shift
+- [x] Live seat count ("2 of 3 driver spots left")
 
 Example: *Food drive — 3 drivers 9:00–12:00, 10 sorters 12:00–16:00.*
 
 ### 3.4 Day-of check-in (M)
 
-- [ ] Event QR code shown on the organizer's phone; volunteers scan to check in / out
-- [ ] Kiosk mode for large events
-- [ ] Optional geofence check (volunteer must be near the event location)
-- [ ] Hours = actual checked-in time, not scheduled time
+- [x] Event QR code shown on the organizer's phone; volunteers scan to check in / out
+- [ ] Kiosk mode for large events *(API ready via check-in token; dedicated kiosk UI deferred)*
+- [ ] Optional geofence check (volunteer must be near the event location) *(needs lat/lng from Priority 2)*
+- [x] Hours = actual checked-in time, not scheduled time
 
 ### 3.5 Requirements and digital waivers (M)
 
-- [ ] Per-event requirements: minimum age, driving license, first-aid training, etc.
-- [ ] Waiver text per event with e-signature and timestamp
-- [ ] Volunteer uploads documents once and reuses them across events
-- [ ] Guardian consent for volunteers under 18
+- [x] Per-event requirements: minimum age, driving license, first-aid training, etc.
+- [x] Waiver text per event with e-signature and timestamp
+- [x] Volunteer uploads documents once and reuses them across events
+- [ ] Guardian consent for volunteers under 18 *(min-age gate shipped; guardian workflow deferred)*
 
 ### 3.6 Group and family signup (S)
 
-- [ ] Register guests / children along with yourself
-- [ ] Team-based signup ("register my club for 8 spots")
+- [x] Register guests / children along with yourself
+- [ ] Team-based signup ("register my club for 8 spots") *(deferred — use guest_count for now)*
 
 ### 3.7 Calendar and sharing (S)
 
-- [ ] "Add to Google Calendar" and `.ics` download
-- [ ] Shareable event links with preview (WhatsApp / Facebook)
+- [x] "Add to Google Calendar" and `.ics` download
+- [x] Shareable event links with preview (WhatsApp / Facebook)
 
----
-
+> Implemented 2026-09-25. Migrations: `1730000000005_organizations`, `1730000000006_event-operations`.
+> Check-in uses per-event `checkin_token` (QR-ready). Geofence + kiosk UI + guardian consent + team bulk signup remain follow-ups.
 ## 4. Priority 1 — Communication and background jobs
 
-- [ ] **Job queue** (e.g. pg-boss on existing Postgres) for scheduled work
-- [ ] **Email** notifications: confirmation, change, cancellation
-- [ ] **SMS** via a local Bangladeshi SMS gateway (phone is more reliable than email locally)
-- [ ] **Reminders** 24h and 2h before an event — the single biggest lever for reducing no-shows
-- [ ] Automated thank-you messages after attendance
-- [ ] Organizer bulk messaging with templates
-- [ ] Replace 15s notification polling with Server-Sent Events or WebSockets
-- [ ] Per-user notification preferences (email / SMS / in-app)
+- [x] **Job queue** (e.g. pg-boss on existing Postgres) for scheduled work
+- [x] **Email** notifications: confirmation, change, cancellation
+- [x] **SMS** via a local Bangladeshi SMS gateway (phone is more reliable than email locally)
+- [x] **Reminders** 24h and 2h before an event — the single biggest lever for reducing no-shows
+- [x] Automated thank-you messages after attendance
+- [x] Organizer bulk messaging with templates
+- [x] Replace 15s notification polling with Server-Sent Events or WebSockets
+- [x] Per-user notification preferences (email / SMS / in-app)
+
+> Implemented 2026-09-25. Migration: `1730000000007_communication-jobs`.
+> Queue is a Postgres `background_jobs` table with `SKIP LOCKED` worker (not pg-boss).
+> Email/SMS default to console logging; set `SMS_API_URL` for a real BD gateway.
+> SSE stream: `GET /api/v1/notifications/stream?token=...` (EventSource cannot set Auth headers).
 
 ---
 
