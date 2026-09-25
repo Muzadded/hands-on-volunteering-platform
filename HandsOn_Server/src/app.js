@@ -9,9 +9,6 @@ import { requestId } from "./middleware/requestId.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import v1Routes from "./routes/v1/index.js";
 import healthRoutes from "./routes/v1/health.js";
-import legacyAuth from "../routes/jwtAuth.js";
-import legacyApi from "../routes/userRoutes.js";
-import legacyDashboard from "../routes/dashboard.js";
 import { openApiSpec } from "./docs/openapi.js";
 
 export function createApp() {
@@ -40,10 +37,6 @@ export function createApp() {
   app.use("/health", healthRoutes);
   app.use("/api/v1", v1Routes);
   app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
-
-  app.use("/auth", legacyAuth);
-  app.use("/api", legacyApi);
-  app.use("/dashboard", legacyDashboard);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

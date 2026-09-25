@@ -10,6 +10,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["node"]
   },
   "include": ["src/**/*.ts", "src/**/*.js", "server.js"]

@@ -15,6 +15,9 @@ import Teams from "../Pages/Teams";
 import CreateTeams from "../Pages/CreateTeams";
 import TeamDash from "../Pages/TeamDash";
 import NotFound from "../Pages/NotFound";
+import ForgotPassword from "../Pages/ForgotPassword";
+import ResetPassword from "../Pages/ResetPassword";
+import VerifyEmail from "../Pages/VerifyEmail";
 
 function LegacyTeamRedirect({ paramKey = "teamId" }) {
   const params = useParams();
@@ -92,6 +95,10 @@ const AppRoute = () => {
           )
         }
       />
+
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       <Route
         path="/dashboard/:id"

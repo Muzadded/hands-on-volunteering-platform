@@ -58,8 +58,12 @@ async function seed() {
   const volId = volunteer.rows[0].user_id;
 
   const event = await pool.query(
-    `INSERT INTO events (title, details, date, location, start_time, end_time, category, member_limit, total_member, created_by)
-     VALUES ($1,$2,CURRENT_DATE + 7,'Community Center','09:00','12:00','education',20,1,$3)
+    `INSERT INTO events (title, details, date, location, start_time, end_time, category, member_limit, total_member, created_by, starts_at, ends_at)
+     VALUES (
+       $1,$2,CURRENT_DATE + 7,'Community Center','09:00','12:00','education',20,1,$3,
+       ((CURRENT_DATE + 7)::text || ' 09:00:00')::timestamp AT TIME ZONE 'UTC',
+       ((CURRENT_DATE + 7)::text || ' 12:00:00')::timestamp AT TIME ZONE 'UTC'
+     )
      RETURNING id`,
     [
       "Park Cleanup Demo",
@@ -68,9 +72,11 @@ async function seed() {
     ]
   );
 
+  // Seed volunteer as registrant — organizers stay out of join_event.
   await pool.query(
-    `INSERT INTO join_event (event_id, user_id, join_date) VALUES ($1,$2,CURRENT_DATE)`,
-    [event.rows[0].id, orgId]
+    `INSERT INTO join_event (event_id, user_id, join_date, status)
+     VALUES ($1,$2,CURRENT_DATE,'registered')`,
+    [event.rows[0].id, volId]
   );
 
   const team = await pool.query(
