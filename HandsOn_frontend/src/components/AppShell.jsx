@@ -64,6 +64,7 @@ export default function AppShell({ setAuth, title, children, actions }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [platformRole, setPlatformRole] = useState("user");
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -75,7 +76,18 @@ export default function AppShell({ setAuth, title, children, actions }) {
     } catch {
       setUserId(null);
     }
+    api
+      .get("/users/me")
+      .then((res) => setPlatformRole(res.data?.data?.platform_role || "user"))
+      .catch(() => setPlatformRole("user"));
   }, []);
+
+  const visibleNav = [
+    ...navItems,
+    ...(platformRole === "admin"
+      ? [{ to: "/moderation", label: "Moderation", icon: FaClipboardList }]
+      : []),
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -157,7 +169,7 @@ export default function AppShell({ setAuth, title, children, actions }) {
       >
         HandsOn
       </Link>
-      {navItems.map(({ to, label, icon }) => (
+      {visibleNav.map(({ to, label, icon }) => (
         <NavLink
           key={to}
           to={to}
