@@ -19,6 +19,7 @@ export default function Dashboard({ setAuth }) {
   const [joinedTeams, setJoinedTeams] = useState([]);
   const [impact, setImpact] = useState(null);
   const [recommended, setRecommended] = useState([]);
+  const [isSelf, setIsSelf] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -61,6 +62,7 @@ export default function Dashboard({ setAuth }) {
         setJoinedEvents(extracted?.joinedEvents || []);
         setJoinedTeams(extracted?.joinedTeams || []);
         setImpact(extracted?.impact || null);
+        setIsSelf(extracted?.isSelf !== false);
         setRecommended((recommendedRes.data?.data || []).slice(0, 3));
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load dashboard");
@@ -93,7 +95,7 @@ export default function Dashboard({ setAuth }) {
       setAuth={setAuth}
       title="Dashboard"
       actions={
-        userData ? (
+        userData && isSelf ? (
           <Link to={`/edit-profile/${id}`}>
             <Button size="sm" variant="secondary">
               Edit profile
@@ -123,7 +125,9 @@ export default function Dashboard({ setAuth }) {
             <h2 className="mt-2 font-display text-3xl text-[var(--color-ink)] sm:text-4xl">
               {userData?.name}
             </h2>
-            <p className="mt-2 text-[var(--color-soil)]/80">{userData?.email}</p>
+            {userData?.email ? (
+              <p className="mt-2 text-[var(--color-soil)]/80">{userData.email}</p>
+            ) : null}
             {userData?.about ? (
               <p className="mt-4 max-w-3xl text-[var(--color-soil)]">{userData.about}</p>
             ) : null}

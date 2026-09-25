@@ -83,7 +83,13 @@ function Login({ setAuth }) {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-[var(--color-soil)]">
+          <p className="mt-4 text-center text-sm">
+            <Link to="/forgot-password" className="font-semibold text-[var(--color-teal-deep)]">
+              Forgot password?
+            </Link>
+          </p>
+
+          <p className="mt-4 text-center text-sm text-[var(--color-soil)]">
             New here?{" "}
             <Link to="/register" className="font-semibold text-[var(--color-teal-deep)]">
               Create an account

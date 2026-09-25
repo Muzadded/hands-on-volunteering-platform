@@ -48,10 +48,13 @@ export default function Events({ setAuth }) {
     setError("");
     try {
       const [eventsRes, recommendedRes] = await Promise.all([
-        api.get("/events"),
+        api.get("/events", { params: { upcoming: true } }),
         api.get("/events/recommended"),
       ]);
-      setEvents(eventsRes.data?.data || []);
+      const eventsData = eventsRes.data?.data;
+      setEvents(
+        Array.isArray(eventsData) ? eventsData : eventsData?.items || []
+      );
       setRecommended(recommendedRes.data?.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load events");
