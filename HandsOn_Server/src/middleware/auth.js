@@ -6,6 +6,10 @@ function extractToken(req) {
   if (authHeader?.startsWith("Bearer ")) {
     return authHeader.slice(7).trim();
   }
+  // EventSource cannot set Authorization headers — allow token query for SSE.
+  if (req.query?.token) {
+    return String(req.query.token);
+  }
   return req.header("token") || null;
 }
 
