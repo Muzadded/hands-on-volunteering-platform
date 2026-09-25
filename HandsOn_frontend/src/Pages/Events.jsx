@@ -8,6 +8,7 @@ import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
 import Input from "../components/ui/Input";
 import Select from "../components/ui/Select";
+import Textarea from "../components/ui/Textarea";
 import Alert from "../components/ui/Alert";
 import { Spinner } from "../components/ui/Spinner";
 import { useToast } from "../components/ToastProvider";
@@ -34,6 +35,15 @@ export default function Events({ setAuth }) {
   const [joiningId, setJoiningId] = useState(null);
   const [managingId, setManagingId] = useState(null);
   const [registrants, setRegistrants] = useState([]);
+  const [messageEventId, setMessageEventId] = useState(null);
+  const [messageForm, setMessageForm] = useState({
+    subject: "",
+    body: "",
+    channel: "all",
+    template_id: "",
+  });
+  const [templates, setTemplates] = useState([]);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [filters, setFilters] = useState({ category: "All", location: "", date: "" });
   const currentUserId = (() => {
     try {
@@ -89,15 +99,85 @@ export default function Events({ setAuth }) {
   const join = async (event) => {
     setJoiningId(event.id);
     try {
-      await api.post(`/events/${event.id}/join`, {
+      const body = {
         join_date: new Date().toISOString().slice(0, 10),
-      });
-      toast.success("Joined event");
+      };
+      const guests = window.prompt("Bring guests? Enter number (0 for none):", "0");
+      if (guests != null && guests !== "") {
+        body.guest_count = Math.max(0, Number(guests) || 0);
+      }
+      if (event.waiver_text) {
+        const signature = window.prompt(
+          "Type your full name to sign the event waiver:"
+        );
+        if (!signature) {
+          toast.error("Waiver signature required");
+          return;
+        }
+        body.waiver_signature = signature;
+      }
+      const res = await api.post(`/events/${event.id}/join`, body);
+      toast.success(
+        res.data?.data?.waitlisted ? "Added to waitlist" : "Joined event"
+      );
       await load();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to join event");
     } finally {
       setJoiningId(null);
+    }
+  };
+
+  const withdraw = async (eventId) => {
+    try {
+      await api.post(`/events/${eventId}/withdraw`);
+      toast.success("Withdrawn from event");
+      await load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to withdraw");
+    }
+  };
+
+  const cancelEvent = async (eventId) => {
+    const reason = window.prompt("Cancellation reason (optional):") ?? "";
+    try {
+      await api.post(`/events/${eventId}/cancel`, { reason });
+      toast.success("Event cancelled");
+      await load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to cancel event");
+    }
+  };
+
+  const copyShareLink = async (event) => {
+    try {
+      const res = await api.get(`/events/${event.id}`);
+      const slug = res.data?.data?.share_slug;
+      if (!slug) {
+        toast.error("Share link unavailable");
+        return;
+      }
+      const url = `${window.location.origin}/events/share/${slug}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Share link copied");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not copy share link");
+    }
+  };
+
+  const downloadIcs = async (eventId) => {
+    try {
+      const res = await api.get(`/events/${eventId}/ics`, {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `handson-event-${eventId}.ics`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not download calendar file");
     }
   };
 
@@ -121,6 +201,51 @@ export default function Events({ setAuth }) {
       await load();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update attendance");
+    }
+  };
+
+  const openMessage = async (eventId) => {
+    setMessageEventId(eventId);
+    setMessageForm({ subject: "", body: "", channel: "all", template_id: "" });
+    try {
+      const res = await api.get("/notifications/templates");
+      setTemplates(res.data?.data || []);
+    } catch {
+      setTemplates([]);
+    }
+  };
+
+  const applyTemplate = (templateId) => {
+    const template = templates.find((t) => String(t.id) === String(templateId));
+    setMessageForm((prev) => ({
+      ...prev,
+      template_id: templateId,
+      subject: template?.subject || prev.subject,
+      body: template?.body || prev.body,
+      channel: template?.channel && template.channel !== "all" ? template.channel : prev.channel,
+    }));
+  };
+
+  const sendBulkMessage = async (e) => {
+    e.preventDefault();
+    if (!messageEventId) return;
+    setSendingMessage(true);
+    try {
+      const payload = {
+        subject: messageForm.subject || undefined,
+        body: messageForm.body,
+        channel: messageForm.channel,
+      };
+      if (messageForm.template_id) {
+        payload.template_id = Number(messageForm.template_id);
+      }
+      const res = await api.post(`/events/${messageEventId}/messages`, payload);
+      toast.success(`Queued for ${res.data?.data?.queued ?? 0} registrants`);
+      setMessageEventId(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to send message");
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -235,7 +360,12 @@ export default function Events({ setAuth }) {
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {event.user_joined ? (
-                  <Badge tone="leaf">Joined</Badge>
+                  <>
+                    <Badge tone="leaf">Joined</Badge>
+                    <Button size="sm" variant="secondary" onClick={() => withdraw(event.id)}>
+                      Withdraw
+                    </Button>
+                  </>
                 ) : (
                   <Button
                     size="sm"
@@ -245,10 +375,24 @@ export default function Events({ setAuth }) {
                     Join event
                   </Button>
                 )}
+                <Button size="sm" variant="secondary" onClick={() => copyShareLink(event)}>
+                  Share
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => downloadIcs(event.id)}>
+                  Calendar
+                </Button>
                 {String(event.created_by) === String(currentUserId) ? (
-                  <Button size="sm" variant="secondary" onClick={() => openAttendance(event.id)}>
-                    Attendance
-                  </Button>
+                  <>
+                    <Button size="sm" variant="secondary" onClick={() => openAttendance(event.id)}>
+                      Attendance
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => openMessage(event.id)}>
+                      Message
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => cancelEvent(event.id)}>
+                      Cancel event
+                    </Button>
+                  </>
                 ) : null}
               </div>
             </article>
@@ -292,6 +436,57 @@ export default function Events({ setAuth }) {
             ))
           )}
         </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(messageEventId)}
+        title="Message registrants"
+        onClose={() => setMessageEventId(null)}
+      >
+        <form onSubmit={sendBulkMessage} className="space-y-3">
+          {templates.length > 0 ? (
+            <Select
+              id="message-template"
+              label="Template (optional)"
+              value={messageForm.template_id}
+              onChange={(e) => applyTemplate(e.target.value)}
+            >
+              <option value="">Custom message</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          ) : null}
+          <Input
+            id="message-subject"
+            label="Subject"
+            value={messageForm.subject}
+            onChange={(e) => setMessageForm({ ...messageForm, subject: e.target.value })}
+          />
+          <Textarea
+            id="message-body"
+            label="Body"
+            required
+            value={messageForm.body}
+            onChange={(e) => setMessageForm({ ...messageForm, body: e.target.value })}
+          />
+          <Select
+            id="message-channel"
+            label="Channel"
+            value={messageForm.channel}
+            onChange={(e) => setMessageForm({ ...messageForm, channel: e.target.value })}
+          >
+            <option value="all">In-app + email (+ SMS if enabled)</option>
+            <option value="in_app">In-app only</option>
+            <option value="email">Email only</option>
+            <option value="sms">SMS only</option>
+          </Select>
+          <Button type="submit" loading={sendingMessage}>
+            Send to registrants
+          </Button>
+        </form>
       </Modal>
     </AppShell>
   );

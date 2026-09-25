@@ -26,6 +26,10 @@ export default function EditProfile({ setAuth }) {
     skills: "",
     causes: [],
     about: "",
+    phone: "",
+    notify_in_app: true,
+    notify_email: true,
+    notify_sms: false,
   });
 
   useEffect(() => {
@@ -57,6 +61,10 @@ export default function EditProfile({ setAuth }) {
             : user.skills || "",
           causes: Array.isArray(user.causes) ? user.causes : [],
           about: user.about || "",
+          phone: user.phone || "",
+          notify_in_app: user.notify_in_app !== false,
+          notify_email: user.notify_email !== false,
+          notify_sms: Boolean(user.notify_sms),
         });
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load profile");
@@ -77,7 +85,20 @@ export default function EditProfile({ setAuth }) {
         .map((s) => s.trim())
         .filter(Boolean)
         .join(",");
-      await api.patch(`/users/${id}`, { ...formData, skills });
+      await api.patch(`/users/${id}`, {
+        name: formData.name,
+        gender: formData.gender,
+        dob: formData.dob,
+        skills,
+        causes: formData.causes,
+        about: formData.about,
+      });
+      await api.patch("/notifications/preferences", {
+        phone: formData.phone || null,
+        notify_in_app: formData.notify_in_app,
+        notify_email: formData.notify_email,
+        notify_sms: formData.notify_sms,
+      });
       toast.success("Profile updated");
       navigate(`/dashboard/${id}`);
     } catch (err) {
@@ -138,6 +159,48 @@ export default function EditProfile({ setAuth }) {
             value={formData.about}
             onChange={(e) => setFormData({ ...formData, about: e.target.value })}
           />
+          <Input
+            id="edit-phone"
+            label="Phone (for SMS)"
+            placeholder="01XXXXXXXXX"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          />
+          <fieldset className="space-y-2 rounded-2xl border border-[var(--color-mist)] p-4">
+            <legend className="px-1 text-sm font-semibold text-[var(--color-teal-deep)]">
+              Notification preferences
+            </legend>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={formData.notify_in_app}
+                onChange={(e) =>
+                  setFormData({ ...formData, notify_in_app: e.target.checked })
+                }
+              />
+              In-app
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={formData.notify_email}
+                onChange={(e) =>
+                  setFormData({ ...formData, notify_email: e.target.checked })
+                }
+              />
+              Email
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={formData.notify_sms}
+                onChange={(e) =>
+                  setFormData({ ...formData, notify_sms: e.target.checked })
+                }
+              />
+              SMS
+            </label>
+          </fieldset>
           <div className="flex gap-2">
             <Button type="submit" loading={saving}>
               Save changes
