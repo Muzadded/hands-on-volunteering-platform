@@ -40,3 +40,30 @@ export async function updateUser(req, res, next) {
     next(error);
   }
 }
+
+export async function listCredentials(req, res, next) {
+  try {
+    const items = await usersService.listCredentials(req.user);
+    return sendSuccess(res, 200, "Credentials fetched", items);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function addCredential(req, res, next) {
+  try {
+    const item = await usersService.addCredential(req.user, req.body);
+    return sendSuccess(res, 201, "Credential added", item);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function removeCredential(req, res, next) {
+  try {
+    const item = await usersService.removeCredential(req.user, req.params.credentialId);
+    return sendSuccess(res, 200, "Credential removed", item);
+  } catch (error) {
+    next(error);
+  }
+}
