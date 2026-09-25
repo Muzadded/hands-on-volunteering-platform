@@ -1,6 +1,7 @@
 import * as usersRepo from "../repositories/usersRepository.js";
 import * as eventsRepo from "../repositories/eventsRepository.js";
 import * as helpRepo from "../repositories/helpPostsRepository.js";
+import * as credentialsRepo from "../repositories/credentialsRepository.js";
 import { AppError } from "../utils/response.js";
 import { hoursBetween, normalizeTags } from "../utils/matching.js";
 
@@ -18,7 +19,9 @@ function toPublicUser(user) {
 function toPublicImpact(impact) {
   return {
     hoursVolunteered: impact.hoursVolunteered,
+    verifiedHours: impact.verifiedHours,
     eventsAttended: impact.eventsAttended,
+    verifiedEventsAttended: impact.verifiedEventsAttended,
     teamsJoined: impact.teamsJoined,
     helpContributions: impact.helpContributions,
   };
@@ -38,6 +41,20 @@ export async function getImpact(userId) {
   ]);
 
   const hours = attended.reduce((sum, event) => {
+    if (event.check_in_at && event.check_out_at) {
+      return sum + hoursBetween(event.check_in_at, event.check_out_at);
+    }
+    if (event.starts_at && event.ends_at) {
+      return sum + hoursBetween(event.starts_at, event.ends_at);
+    }
+    return sum + hoursBetween(event.start_time, event.end_time);
+  }, 0);
+
+  const verifiedHours = attended.reduce((sum, event) => {
+    if (!event.org_verified) return sum;
+    if (event.check_in_at && event.check_out_at) {
+      return sum + hoursBetween(event.check_in_at, event.check_out_at);
+    }
     if (event.starts_at && event.ends_at) {
       return sum + hoursBetween(event.starts_at, event.ends_at);
     }
@@ -46,7 +63,9 @@ export async function getImpact(userId) {
 
   return {
     hoursVolunteered: Math.round(hours * 100) / 100,
+    verifiedHours: Math.round(verifiedHours * 100) / 100,
     eventsAttended: attended.length,
+    verifiedEventsAttended: attended.filter((e) => e.org_verified).length,
     teamsJoined: teams.length,
     helpCreated: help.created,
     helpClaimed: help.claimed,
@@ -113,4 +132,23 @@ export async function updateOwnProfile(actorId, targetId, payload) {
 
   if (!updated) throw new AppError("User not found", 404);
   return updated;
+}
+
+export async function listCredentials(actorId) {
+  return credentialsRepo.listForUser(actorId);
+}
+
+export async function addCredential(actorId, payload) {
+  return credentialsRepo.create({
+    user_id: actorId,
+    credential_type: String(payload.credential_type).trim().toLowerCase(),
+    label: payload.label || null,
+    document_url: payload.document_url || null,
+  });
+}
+
+export async function removeCredential(actorId, credentialId) {
+  const removed = await credentialsRepo.remove(credentialId, actorId);
+  if (!removed) throw new AppError("Credential not found", 404);
+  return removed;
 }
