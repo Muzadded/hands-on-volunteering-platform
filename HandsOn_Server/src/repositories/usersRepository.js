@@ -1,7 +1,7 @@
 import pool from "../../db.js";
 
 const SAFE_USER_COLUMNS =
-  "user_id, name, gender, dob, email, about, skills, causes";
+  "user_id, name, gender, dob, email, about, skills, causes, email_verified_at";
 
 export async function findById(id) {
   const result = await pool.query(
@@ -13,7 +13,7 @@ export async function findById(id) {
 
 export async function findAuthByEmail(email) {
   const result = await pool.query(
-    "SELECT user_id, password FROM users WHERE email = $1",
+    "SELECT user_id, password, email, email_verified_at FROM users WHERE email = $1",
     [email]
   );
   return result.rows[0] || null;
@@ -52,6 +52,25 @@ export async function updateProfile(id, { name, gender, dob, about, skills, caus
      WHERE user_id = $7
      RETURNING ${SAFE_USER_COLUMNS}`,
     [name, gender, dob, about, skills, causes, id]
+  );
+  return result.rows[0] || null;
+}
+
+export async function updatePassword(userId, passwordHash) {
+  const result = await pool.query(
+    `UPDATE users SET password = $2 WHERE user_id = $1 RETURNING user_id`,
+    [userId, passwordHash]
+  );
+  return result.rows[0] || null;
+}
+
+export async function markEmailVerified(userId) {
+  const result = await pool.query(
+    `UPDATE users
+     SET email_verified_at = COALESCE(email_verified_at, NOW())
+     WHERE user_id = $1
+     RETURNING ${SAFE_USER_COLUMNS}`,
+    [userId]
   );
   return result.rows[0] || null;
 }

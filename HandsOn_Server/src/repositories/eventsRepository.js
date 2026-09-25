@@ -3,8 +3,8 @@ import pool from "../../db.js";
 export async function createEvent(row) {
   const result = await pool.query(
     `INSERT INTO events
-      (title, details, date, location, start_time, end_time, category, member_limit, created_by, tags)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      (title, details, date, location, start_time, end_time, category, member_limit, total_member, created_by, tags, starts_at, ends_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,0,$9,$10,$11,$12)
      RETURNING *`,
     [
       row.title,
@@ -17,6 +17,8 @@ export async function createEvent(row) {
       row.member_limit,
       row.created_by,
       row.tags || [],
+      row.starts_at || null,
+      row.ends_at || null,
     ]
   );
   return result.rows[0];
@@ -36,22 +38,77 @@ export async function insertJoin(eventId, userId, joinDate) {
   return result.rows[0];
 }
 
-export async function listEvents(userId = null) {
+export async function listEvents(userId = null, filters = {}) {
+  const {
+    upcoming = true,
+    available = false,
+    page = 1,
+    limit = 50,
+  } = filters;
+
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(100, Math.max(1, Number(limit) || 50));
+  const offset = (safePage - 1) * safeLimit;
+
+  const where = [];
+  if (upcoming) {
+    where.push(
+      `(COALESCE(e.starts_at, (e.date::text || ' 00:00:00')::timestamp AT TIME ZONE 'UTC') >= NOW())`
+    );
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const having = [];
+  if (available) {
+    having.push("COUNT(je.event_id) < e.member_limit");
+  }
+  const havingSql = having.length ? `HAVING ${having.join(" AND ")}` : "";
+
+  const countQuery = `
+    SELECT COUNT(*)::int AS total FROM (
+      SELECT e.id
+      FROM events e
+      LEFT JOIN join_event je ON e.id = je.event_id
+      ${whereSql}
+      GROUP BY e.id, e.member_limit
+      ${havingSql}
+    ) counted
+  `;
+  const countResult = await pool.query(countQuery);
+  const total = countResult.rows[0]?.total || 0;
+
+  const listParams = [];
+  let userJoinedExpr = "FALSE";
+  if (userId != null) {
+    listParams.push(userId);
+    userJoinedExpr = `EXISTS(SELECT 1 FROM join_event WHERE event_id = e.id AND user_id = $1)`;
+  }
+
+  listParams.push(safeLimit);
+  const limitParam = `$${listParams.length}`;
+  listParams.push(offset);
+  const offsetParam = `$${listParams.length}`;
+
   const query = `
     SELECT e.*,
            COUNT(je.event_id) as registered_volunteers,
-           ${
-             userId
-               ? "EXISTS(SELECT 1 FROM join_event WHERE event_id = e.id AND user_id = $1)"
-               : "FALSE"
-           } as user_joined
+           ${userJoinedExpr} as user_joined
     FROM events e
     LEFT JOIN join_event je ON e.id = je.event_id
+    ${whereSql}
     GROUP BY e.id
-    ORDER BY e.date DESC
+    ${havingSql}
+    ORDER BY e.date ASC, e.start_time ASC NULLS LAST
+    LIMIT ${limitParam} OFFSET ${offsetParam}
   `;
-  const result = await pool.query(query, userId ? [userId] : []);
-  return result.rows;
+  const result = await pool.query(query, listParams);
+  return {
+    items: result.rows,
+    page: safePage,
+    limit: safeLimit,
+    total,
+    hasMore: offset + result.rows.length < total,
+  };
 }
 
 export async function listRegistrants(eventId) {
@@ -91,6 +148,13 @@ export async function joinEventTransactional(eventId, userId, joinDate) {
     }
 
     const event = eventCheck.rows[0];
+    if (String(event.created_by) === String(userId)) {
+      throw Object.assign(
+        new Error("Organizers cannot join their own event as volunteers"),
+        { statusCode: 400 }
+      );
+    }
+
     const countResult = await db.query(
       "SELECT COUNT(*)::int AS registered FROM join_event WHERE event_id = $1",
       [eventId]

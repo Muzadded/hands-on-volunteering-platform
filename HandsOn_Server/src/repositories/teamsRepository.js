@@ -62,6 +62,12 @@ export async function listTeams(userId = null) {
            }
     FROM teams t
     LEFT JOIN team_members tm ON t.id = tm.team_id
+    WHERE t.is_private = false
+       ${
+         userId
+           ? "OR EXISTS(SELECT 1 FROM team_members WHERE team_id = t.id AND user_id = $1)"
+           : ""
+       }
     GROUP BY t.id
     ORDER BY t.created_at DESC
   `;
