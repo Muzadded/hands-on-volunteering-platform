@@ -47,13 +47,19 @@ export async function joinTeam(actorId, teamId) {
 export async function getTeam(teamId, actorId) {
   const team = await teamsRepo.findTeamWithMembership(teamId, actorId);
   if (!team) throw new AppError("Team not found", 404);
+
+  const isMember = Boolean(team.is_member);
+  if (team.is_private && !isMember) {
+    throw new AppError("This team is private — membership required", 403);
+  }
+
   const members = await teamsRepo.listMembers(teamId);
   const myRole = await teamsRepo.getMemberRole(teamId, actorId);
   return {
     ...team,
     members,
     member_count: parseInt(team.member_count, 10) || 0,
-    is_member: team.is_member || false,
+    is_member: isMember,
     my_role: myRole,
   };
 }
