@@ -1,7 +1,7 @@
 import pool from "../../db.js";
 
 const SAFE_USER_COLUMNS =
-  "user_id, name, gender, dob, email, about, skills, causes, email_verified_at, platform_role, phone, notify_in_app, notify_email, notify_sms";
+  "user_id, name, gender, dob, email, about, skills, causes, email_verified_at, platform_role, phone, notify_in_app, notify_email, notify_sms, lat, lng";
 
 export async function findById(id) {
   const result = await pool.query(
@@ -52,6 +52,16 @@ export async function updateProfile(id, { name, gender, dob, about, skills, caus
      WHERE user_id = $7
      RETURNING ${SAFE_USER_COLUMNS}`,
     [name, gender, dob, about, skills, causes, id]
+  );
+  return result.rows[0] || null;
+}
+
+export async function updateCoords(userId, lat, lng) {
+  const result = await pool.query(
+    `UPDATE users SET lat = $2, lng = $3
+     WHERE user_id = $1
+     RETURNING ${SAFE_USER_COLUMNS}`,
+    [userId, lat, lng]
   );
   return result.rows[0] || null;
 }
