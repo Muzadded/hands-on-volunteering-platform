@@ -102,7 +102,7 @@ describe.skipIf(!hasDb)("API integration", () => {
     expect(String(selfJoin.body.message).toLowerCase()).toContain("organizer");
   });
 
-  it("enforces event capacity", async () => {
+  it("enforces event capacity via waitlist when full", async () => {
     const created = await request(app)
       .post("/api/v1/events")
       .set("Authorization", `Bearer ${tokenA}`)
@@ -125,6 +125,7 @@ describe.skipIf(!hasDb)("API integration", () => {
       .set("Authorization", `Bearer ${tokenB}`)
       .send({});
     expect(joinOk.status).toBe(200);
+    expect(joinOk.body.data.waitlisted).toBeFalsy();
 
     const stamp = Date.now();
     const third = await request(app)
@@ -141,12 +142,13 @@ describe.skipIf(!hasDb)("API integration", () => {
       });
     expect(third.status).toBe(201);
 
-    const joinFull = await request(app)
+    const joinWait = await request(app)
       .post(`/api/v1/events/${eventId}/join`)
       .set("Authorization", `Bearer ${third.body.token}`)
       .send({});
-    expect(joinFull.status).toBe(400);
-    expect(String(joinFull.body.message).toLowerCase()).toContain("full");
+    expect(joinWait.status).toBe(200);
+    expect(joinWait.body.data.waitlisted).toBe(true);
+    expect(joinWait.body.data.joinData.status).toBe("waitlisted");
   });
 
   it("returns recommended events with match scores", async () => {
