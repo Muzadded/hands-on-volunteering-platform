@@ -10,13 +10,14 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
-import api from "../api/client";
+import api, { API_URL } from "../api/client";
 import { cn } from "../lib/cn";
 import Button from "./ui/Button";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: FaHome },
   { to: "/events-feed", label: "Events", icon: FaClipboardList },
+  { to: "/organizations", label: "Organizations", icon: FaUsers },
   { to: "/help-request", label: "Help", icon: FaBell },
   { to: "/teams", label: "Teams", icon: FaUsers },
 ];
@@ -24,6 +25,14 @@ const navItems = [
 function formatNotification(item) {
   const p = item.payload || {};
   switch (item.type) {
+    case "waitlisted":
+      return `You're on the waitlist for ${p.eventTitle || "an event"}`;
+    case "waitlist_promoted":
+      return `A waitlist spot opened for ${p.eventTitle || "an event"}`;
+    case "event_cancelled":
+      return `${p.eventTitle || "An event"} was cancelled`;
+    case "event_updated":
+      return `${p.eventTitle || "An event"} was updated`;
     case "join_confirmed":
       return `You're confirmed for ${p.eventTitle || "an event"}`;
     case "event_join":
@@ -38,6 +47,12 @@ function formatNotification(item) {
       return "A volunteer joined your team";
     case "team_invite_accepted":
       return "Your team invite was accepted";
+    case "event_reminder":
+      return `Reminder: ${p.eventTitle || "your event"} starts in ${p.window || "soon"}`;
+    case "thank_you":
+      return `Thank you for volunteering at ${p.eventTitle || "the event"}`;
+    case "bulk_message":
+      return p.subject || p.body || "Message from organizer";
     default:
       return item.type.replaceAll("_", " ");
   }
@@ -64,6 +79,9 @@ export default function AppShell({ setAuth, title, children, actions }) {
 
   useEffect(() => {
     let cancelled = false;
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+
     const load = async () => {
       try {
         const res = await api.get("/notifications");
@@ -71,14 +89,36 @@ export default function AppShell({ setAuth, title, children, actions }) {
         setNotifications(res.data?.data?.items || []);
         setUnreadCount(res.data?.data?.unreadCount || 0);
       } catch {
-        // ignore poll errors
+        // ignore
       }
     };
     load();
-    const id = window.setInterval(load, 15000);
+
+    const streamUrl = `${API_URL}/notifications/stream?token=${encodeURIComponent(token)}`;
+    const es = new EventSource(streamUrl);
+    es.addEventListener("notification", (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+        if (data?.item) {
+          setNotifications((prev) => {
+            if (prev.some((n) => n.id === data.item.id)) return prev;
+            return [data.item, ...prev].slice(0, 40);
+          });
+          setUnreadCount((c) => c + 1);
+        } else {
+          load();
+        }
+      } catch {
+        load();
+      }
+    });
+    es.onerror = () => {
+      // Browser reconnects EventSource automatically.
+    };
+
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      es.close();
     };
   }, []);
 

@@ -18,6 +18,8 @@ import NotFound from "../Pages/NotFound";
 import ForgotPassword from "../Pages/ForgotPassword";
 import ResetPassword from "../Pages/ResetPassword";
 import VerifyEmail from "../Pages/VerifyEmail";
+import Organizations from "../Pages/Organizations";
+import SharedEvent from "../Pages/SharedEvent";
 
 function LegacyTeamRedirect({ paramKey = "teamId" }) {
   const params = useParams();
@@ -99,6 +101,18 @@ const AppRoute = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/events/share/:slug" element={<SharedEvent />} />
+
+      <Route
+        path="/organizations"
+        element={
+          isAuthenticated ? (
+            <Organizations setAuth={setAuth} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
 
       <Route
         path="/dashboard/:id"
