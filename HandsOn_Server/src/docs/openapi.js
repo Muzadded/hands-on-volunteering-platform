@@ -83,12 +83,12 @@ export const openApiSpec = {
     },
     "/help-posts": {
       get: {
-        summary: "List help posts",
+        summary: "List help posts (filters: status, urgency, post_type, category, lat/lng/radius_km)",
         security: [{ bearerAuth: [] }],
         responses: { 200: { description: "OK" } },
       },
       post: {
-        summary: "Create help post",
+        summary: "Create help post (ask|offer, category, optional lat/lng)",
         security: [{ bearerAuth: [] }],
         responses: { 201: { description: "Created" } },
       },
@@ -101,6 +101,54 @@ export const openApiSpec = {
           { name: "id", in: "path", required: true, schema: { type: "integer" } },
         ],
         responses: { 201: { description: "Created" } },
+      },
+    },
+    "/help-posts/{id}/claim": {
+      post: {
+        summary: "Claim help post (reveals exact address to claimer)",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "integer" } },
+        ],
+        responses: { 200: { description: "Claimed" } },
+      },
+    },
+    "/help-posts/{id}/invites": {
+      post: {
+        summary: "Invite nearby helpers",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "integer" } },
+        ],
+        responses: { 201: { description: "Invites sent" } },
+      },
+    },
+    "/help-posts/invites/{inviteId}/respond": {
+      post: {
+        summary: "Accept/decline invite (accept shares contact + meeting time)",
+        security: [{ bearerAuth: [] }],
+        responses: { 200: { description: "Updated" } },
+      },
+    },
+    "/help-posts/{id}/reviews": {
+      post: {
+        summary: "Leave a 1-5 review after resolved",
+        security: [{ bearerAuth: [] }],
+        responses: { 201: { description: "Created" } },
+      },
+    },
+    "/help-posts/reports": {
+      post: {
+        summary: "Report a help post or user",
+        security: [{ bearerAuth: [] }],
+        responses: { 201: { description: "Created" } },
+      },
+    },
+    "/help-posts/moderation/reports": {
+      get: {
+        summary: "Admin moderation queue",
+        security: [{ bearerAuth: [] }],
+        responses: { 200: { description: "OK" } },
       },
     },
     "/teams": {

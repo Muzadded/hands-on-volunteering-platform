@@ -9,6 +9,19 @@ const router = Router();
 
 router.get("/me", authorization, usersController.getMe);
 router.get("/me/impact", authorization, usersController.getImpact);
+router.patch(
+  "/me/location",
+  authorization,
+  validate(
+    z.object({
+      body: z.object({
+        lat: z.coerce.number().min(-90).max(90),
+        lng: z.coerce.number().min(-180).max(180),
+      }),
+    })
+  ),
+  usersController.updateMyLocation
+);
 router.get("/me/credentials", authorization, usersController.listCredentials);
 router.post(
   "/me/credentials",

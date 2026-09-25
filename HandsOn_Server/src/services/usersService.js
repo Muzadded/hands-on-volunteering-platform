@@ -134,6 +134,12 @@ export async function updateOwnProfile(actorId, targetId, payload) {
   return updated;
 }
 
+export async function updateMyLocation(actorId, { lat, lng }) {
+  const updated = await usersRepo.updateCoords(actorId, lat, lng);
+  if (!updated) throw new AppError("User not found", 404);
+  return updated;
+}
+
 export async function listCredentials(actorId) {
   return credentialsRepo.listForUser(actorId);
 }

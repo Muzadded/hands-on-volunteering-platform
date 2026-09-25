@@ -96,13 +96,19 @@ async function seed() {
   );
 
   await pool.query(
-    `INSERT INTO help_post (created_by, details, location, urgency_level)
-     VALUES ($1,$2,$3,$4)`,
+    `INSERT INTO help_post
+       (created_by, title, details, location, urgency_level, post_type, category, lat, lng)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
     [
       volId,
+      "After-school tutoring help",
       "Need help tutoring kids after school this week (demo help post).",
       "Library Room B",
       "medium",
+      "ask",
+      "tutoring",
+      23.7808,
+      90.4072,
     ]
   );
 
