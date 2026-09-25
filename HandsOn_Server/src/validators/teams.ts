@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { idParam } from "./auth.ts";
+import { idParam } from "./auth.js";
 
 export const createTeamSchema = z.object({
   body: z.object({
