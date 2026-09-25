@@ -61,7 +61,7 @@ describe("Login form", () => {
 
   it("shows error message on failed login", async () => {
     api.post.mockRejectedValue({
-      response: { data: { message: "Invalid Password" } },
+      response: { data: { message: "Invalid email or password" } },
     });
 
     render(
@@ -78,6 +78,8 @@ describe("Login form", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
-    expect(await screen.findByText(/invalid password/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/invalid email or password/i)
+    ).toBeInTheDocument();
   });
 });

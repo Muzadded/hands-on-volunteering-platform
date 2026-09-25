@@ -29,6 +29,9 @@ describe("matching utils", () => {
 
   it("computes volunteer hours from times", () => {
     expect(hoursBetween("09:00", "12:00")).toBe(3);
-    expect(hoursBetween("10:00", "09:00")).toBe(0);
+    expect(hoursBetween("22:00", "01:00")).toBe(3);
+    expect(
+      hoursBetween("2032-01-01T22:00:00.000Z", "2032-01-02T01:00:00.000Z")
+    ).toBe(3);
   });
 });

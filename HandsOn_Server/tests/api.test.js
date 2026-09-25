@@ -63,13 +63,52 @@ describe.skipIf(!hasDb)("API integration", () => {
     expect(res.status).toBe(403);
   });
 
+  it("returns public profile without private fields for other users", async () => {
+    const res = await request(app)
+      .get(`/api/v1/users/${userB}`)
+      .set("Authorization", `Bearer ${tokenA}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.isSelf).toBe(false);
+    expect(res.body.data.user.email).toBeUndefined();
+    expect(res.body.data.user.dob).toBeUndefined();
+    expect(res.body.data.user.gender).toBeUndefined();
+    expect(res.body.data.joinedEvents).toBeUndefined();
+  });
+
+  it("does not auto-register the organizer and blocks self-join", async () => {
+    const created = await request(app)
+      .post("/api/v1/events")
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({
+        title: "Organizer Guard Event",
+        details: "organizer stays out of capacity",
+        date: "2032-01-01",
+        location: "Park",
+        start_time: "09:00",
+        end_time: "10:00",
+        category: "Education",
+        member_limit: 5,
+        tags: ["education"],
+      });
+    expect(created.status).toBe(201);
+    expect(created.body.data.joinData).toBeUndefined();
+    const eventId = created.body.data.event.id;
+
+    const selfJoin = await request(app)
+      .post(`/api/v1/events/${eventId}/join`)
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({});
+    expect(selfJoin.status).toBe(400);
+    expect(String(selfJoin.body.message).toLowerCase()).toContain("organizer");
+  });
+
   it("enforces event capacity", async () => {
     const created = await request(app)
       .post("/api/v1/events")
       .set("Authorization", `Bearer ${tokenA}`)
       .send({
         title: "Capacity Event",
-        details: "full after creator",
+        details: "one volunteer slot",
         date: "2032-01-01",
         location: "Park",
         start_time: "09:00",
@@ -81,12 +120,33 @@ describe.skipIf(!hasDb)("API integration", () => {
     expect(created.status).toBe(201);
     const eventId = created.body.data.event.id;
 
-    const join = await request(app)
+    const joinOk = await request(app)
       .post(`/api/v1/events/${eventId}/join`)
       .set("Authorization", `Bearer ${tokenB}`)
       .send({});
-    expect(join.status).toBe(400);
-    expect(String(join.body.message).toLowerCase()).toContain("full");
+    expect(joinOk.status).toBe(200);
+
+    const stamp = Date.now();
+    const third = await request(app)
+      .post("/api/v1/auth/register")
+      .send({
+        name: "User C",
+        gender: "other",
+        dob: "2000-01-01",
+        email: `phase4c_${stamp}@test.local`,
+        password: "TestPass123!",
+        about: "tester",
+        skills: ["teaching"],
+        causes: ["education"],
+      });
+    expect(third.status).toBe(201);
+
+    const joinFull = await request(app)
+      .post(`/api/v1/events/${eventId}/join`)
+      .set("Authorization", `Bearer ${third.body.token}`)
+      .send({});
+    expect(joinFull.status).toBe(400);
+    expect(String(joinFull.body.message).toLowerCase()).toContain("full");
   });
 
   it("returns recommended events with match scores", async () => {
