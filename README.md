@@ -11,7 +11,7 @@ Community volunteering platform: match skills/causes to events, verify attendanc
 | Database | PostgreSQL |
 | Ops | Docker Compose, GitHub Actions, Vitest |
 
-API version: `/api/v1` (legacy `/auth`, `/api`, `/dashboard` still mounted for compatibility).
+API version: `/api/v1`.
 
 ## Quick start (Docker Compose)
 
@@ -174,7 +174,7 @@ CORS: set API `CLIENT_ORIGIN` to the exact Vercel origin (no trailing slash mism
 ## Interview talking points
 
 - **Security baseline:** JWT on `/api`, IDOR checks on profile updates, Zod validation, rate-limited auth, Helmet, locked CORS  
-- **Versioned API:** `/api/v1` layered routes/controllers/services/repos while legacy mounts remain during migration  
+- **Versioned API:** `/api/v1` layered routes/controllers/services/repos  
 - **Differentiator:** skill/cause matching + verified attendance hours (not vanity counters)  
 - **Ops:** migrations, seed, Docker Compose, CI with real Postgres integration tests  
 
