@@ -19,6 +19,15 @@ export async function getImpact(req, res, next) {
   }
 }
 
+export async function updateMyLocation(req, res, next) {
+  try {
+    const user = await usersService.updateMyLocation(req.user, req.body);
+    return sendSuccess(res, 200, "Location updated", user);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getUserById(req, res, next) {
   try {
     const userData = await usersService.getUserProfile(req.user, req.params.id);
