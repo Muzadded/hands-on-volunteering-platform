@@ -6,6 +6,7 @@ import {
   createEventSchema,
   joinEventSchema,
   attendanceSchema,
+  listEventsSchema,
 } from "../../validators/events.ts";
 import { idParam } from "../../validators/auth.ts";
 import { z } from "zod";
@@ -14,7 +15,7 @@ const router = Router();
 
 router.use(authorization);
 
-router.get("/", eventsController.listEvents);
+router.get("/", validate(listEventsSchema), eventsController.listEvents);
 router.get("/recommended", eventsController.recommendedEvents);
 router.post("/", validate(createEventSchema), eventsController.createEvent);
 router.get(
