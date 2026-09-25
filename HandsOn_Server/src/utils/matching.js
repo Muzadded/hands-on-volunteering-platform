@@ -48,11 +48,27 @@ export function scoreEventForUser(user, event) {
 
 export function hoursBetween(startTime, endTime) {
   if (!startTime || !endTime) return 0;
+
+  // Prefer full timestamps (Date or ISO) when available.
+  const startMs = Date.parse(String(startTime));
+  const endMs = Date.parse(String(endTime));
+  if (!Number.isNaN(startMs) && !Number.isNaN(endMs)) {
+    const diff = endMs - startMs;
+    if (diff <= 0) return 0;
+    return Math.round((diff / 3_600_000) * 100) / 100;
+  }
+
   const toMinutes = (t) => {
     const [h, m] = String(t).split(":").map(Number);
+    if (Number.isNaN(h)) return NaN;
     return h * 60 + (m || 0);
   };
-  const diff = toMinutes(endTime) - toMinutes(startTime);
+  let start = toMinutes(startTime);
+  let end = toMinutes(endTime);
+  if (Number.isNaN(start) || Number.isNaN(end)) return 0;
+  // Overnight HH:MM pairs
+  if (end <= start) end += 24 * 60;
+  const diff = end - start;
   if (diff <= 0) return 0;
   return Math.round((diff / 60) * 100) / 100;
 }
