@@ -302,7 +302,6 @@ hands-on-volunteering-platform/
 │       └── ci.yml                 # GitHub Actions CI workflow
 ├── docker-compose.yml             # Full-stack container configuration
 ├── README.md                      # Platform documentation
-├── PRODUCTION_MODERNIZATION_PLAN.md # Technical roadmap & design decisions
 ├── HandsOn_Server/                # Express API Backend
 │   ├── src/
 │   │   ├── config/                # Environment variables & DB pool connection
